@@ -1,0 +1,8 @@
+[Unit]
+Description=Carbooking auto-update runner
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Replace the ExecStart path if you place the script elsewhere
+ExecStart=/bin/bash /opt/carbooking/scripts/update_and_notify.sh

@@ -421,6 +421,20 @@ app.get('/api/auth/can_write', (req, res) => {
   return res.status(403).json({ can_write: false });
 });
 
+// internal notify endpoint: accepts requests from localhost only and broadcasts a toast to all WS clients
+app.post('/internal/notify', express.json(), (req, res) => {
+  const ip = (req.ip || '').replace('::ffff:', '');
+  if (ip !== '127.0.0.1' && ip !== '::1') return res.status(403).json({ error: 'forbidden' });
+  const msg = (req.body && req.body.message) ? String(req.body.message) : 'Server updated';
+  try {
+    broadcast({ type: 'toast', message: msg, level: 'info' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('internal notify error', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 // --- cert renewal: regenerate if older than 90 days ---
 function setupCertRenewal(checkDays = 90) {
   const ms = 24 * 60 * 60 * 1000;
