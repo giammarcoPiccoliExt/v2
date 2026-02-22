@@ -1,5 +1,5 @@
 /* Consolidated main stylesheet extracted from inline styles */
-:root{--row-height:96px}
+:root{--row-height:96px; --cell-width:120px}
 body{font-family:Arial;margin:0;padding:0;background:#fff}
 .page{display:none;padding:12px}
 .page.active{display:block}
@@ -17,8 +17,7 @@ body{font-family:Arial;margin:0;padding:0;background:#fff}
 .page-btn.primary{background:#f0f0f0;border-color:#e0e0e0}
 .grid{overflow:auto;white-space:nowrap}
 .row{display:flex;align-items:center}
-.cell{min-width:60px;height:var(--row-height);min-height:var(--row-height);border:1px solid #eee;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;box-sizing:border-box}
-.cell{max-width:220px;max-height:var(--row-height);overflow:hidden}
+.cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);height:var(--row-height);min-height:var(--row-height);max-height:var(--row-height);border:1px solid #eee;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;box-sizing:border-box;overflow:hidden}
 .cell .booking-client{margin-bottom:4px}
 .cell.today{background:#e6e6e6}
 .cell .day-week{font-size:11px;font-weight:700;text-transform:lowercase;color:#333}
@@ -67,8 +66,8 @@ header{padding:0;margin:0}
 .calendar-wrapper{overflow:auto;flex:1;margin-left:calc(20vw + 36px)}
 .cars-col .car-card{background:#fff;display:inline-flex;flex:0 0 auto}
 .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
-.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.month-grid .day-cell{width:100%;box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block;height:calc(var(--row-height) * 2)}
+.month-grid{display:grid;grid-template-columns:repeat(7,var(--cell-width));gap:6px}
+.month-grid .day-cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block;height:calc(var(--row-height) * 2);min-height:calc(var(--row-height) * 2);max-height:calc(var(--row-height) * 2);overflow:hidden}
 .month-grid .day-cell.today{background:#e6e6e6}
 .month-grid .day-cell .day-label{position:absolute;left:6px;top:4px;font-size:12px;color:#333}
 .month-grid .day-cell .more-indicator{position:absolute;right:6px;bottom:6px;width:18px;height:18px;border-radius:3px;background:#999;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
@@ -82,8 +81,8 @@ header{padding:0;margin:0}
 
 /* Mobile adjustments: allow calendar to shrink below previous min-widths */
 @media(max-width:800px){
+  :root{--cell-width:72px}
   .calendar-col{min-width:0;min-width:auto}
-  .cell{min-width:48px;max-width:120px}
   .cars-col{width:28vw;min-width:80px}
 }
 
