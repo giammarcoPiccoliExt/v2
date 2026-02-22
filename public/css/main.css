@@ -80,6 +80,13 @@ header{padding:0;margin:0}
   .calendar-wrapper{margin-left:0}
 }
 
+/* Mobile adjustments: allow calendar to shrink below previous min-widths */
+@media(max-width:800px){
+  .calendar-col{min-width:0;min-width:auto}
+  .cell{min-width:48px;max-width:120px}
+  .cars-col{width:28vw;min-width:80px}
+}
+
 /* helper classes for header and month view */
 .bookings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #monthView{width:100%}
