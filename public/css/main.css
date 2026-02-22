@@ -89,7 +89,7 @@ header{padding:0;margin:0}
 /* Bookings page: two-column layout on small screens with sticky left sidebar (20% width) */
 @media(max-width:600px){
   #bookings .bookings-body{display:flex;gap:12px;align-items:flex-start}
-  #bookings .bookings-body .sidebar{flex:0 0 20%;max-width:20%;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;padding-right:8px;background:transparent;z-index:10}
+  #bookings .bookings-body .sidebar{flex:0 0 15%;max-width:15%;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;padding-right:8px;background:transparent;z-index:10}
   #bookings .bookings-body .sidebar .home-header{position:sticky;top:0;z-index:11;background:transparent}
   #bookings .bookings-body .calendar-wrapper{flex:1;margin-left:0}
   #bookings .cars-col{display:flex;flex-direction:column;gap:8px}
