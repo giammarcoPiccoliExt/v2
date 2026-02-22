@@ -19,9 +19,7 @@ export async function initHome(){
   function renderCalendar(cars, bookings, startDate){
     container.innerHTML='';
     carsCol.innerHTML='';
-    // placeholder to align car cards with calendar header
-    const placeholder = document.createElement('div'); placeholder.className = 'car-card header-placeholder'; placeholder.innerHTML = '&nbsp;';
-    carsCol.appendChild(placeholder);
+    // no placeholder alignment — left column independent from calendar rows
     const days = [];
     const PREV_DAYS = 5;
     const FUTURE_DAYS = 30; // show 30 days into the future
@@ -39,18 +37,7 @@ export async function initHome(){
       days.forEach(day=>{ const c=document.createElement('div'); c.className='cell'; const dk = day.toISOString().slice(0,10); const wk = day.toLocaleDateString('it', { weekday: 'short' }); const dm = day.toLocaleDateString('it', { day: 'numeric', month: 'short' }); c.innerHTML = `<div class="day-week">${wk}</div><div class="day-date">${dm}</div>`; if(dk===todayIso) c.classList.add('today'); daysWrapHeader.appendChild(c); });
       headerRow.appendChild(daysWrapHeader);
       container.appendChild(headerRow);
-      // adjust header-placeholder height so car cards align with calendar rows
-      try{
-        // measure header row after layout and apply same height to placeholder
-        setTimeout(()=>{
-          const ph = carsCol.querySelector('.header-placeholder');
-          if(ph && headerRow){
-            const h = headerRow.getBoundingClientRect().height;
-            ph.style.height = h + 'px';
-            ph.style.minHeight = h + 'px';
-          }
-        }, 20);
-      }catch(e){}
+      // no header-placeholder alignment logic
 
     cars.forEach(car=>{
       // left column card
@@ -82,43 +69,15 @@ export async function initHome(){
       r.appendChild(daysWrap);
       container.appendChild(r);
     });
-    // enforce a fixed cell height (prevent vertical growth) and align left car-cards
-    try{
-      setTimeout(()=>{
-        const sampleCell = container.querySelector('.row .cell');
-        const ph = carsCol.querySelector('.header-placeholder');
-        if(sampleCell){
-          const ch = Math.round(sampleCell.getBoundingClientRect().height);
-          const cards = carsCol.querySelectorAll('.car-card');
-          cards.forEach(cd=>{ cd.style.height = ch + 'px'; cd.style.minHeight = ch + 'px'; });
-          if(ph){ ph.style.height = ch + 'px'; ph.style.minHeight = ch + 'px'; }
-        }
-        // prevent booking text from expanding cell height: truncate with ellipsis
-        const textEls = container.querySelectorAll('.cell .booking-client, .cell .booking-creator');
-        textEls.forEach(el=>{ el.style.whiteSpace = 'nowrap'; el.style.overflow = 'hidden'; el.style.textOverflow = 'ellipsis'; });
-      }, 30);
-    }catch(e){}
+    // no alignment/enforcement logic here — keep cells independent
 
     return days;
   }
 
   // adjust heights on window resize so layout stays synced
   window.addEventListener('resize', ()=>{
-    try{
-      // keep a uniform fixed cell height on resize and prevent vertical expansion
-      const sampleCell = document.querySelector('#calendarContainer .row .cell');
-      const ph = carsCol.querySelector('.header-placeholder');
-      if(sampleCell){
-        const ch = Math.round(sampleCell.getBoundingClientRect().height);
-        const cards = carsCol.querySelectorAll('.car-card');
-        cards.forEach(cd=>{ cd.style.height = ch + 'px'; cd.style.minHeight = ch + 'px'; });
-        if(ph){ ph.style.height = ch + 'px'; ph.style.minHeight = ch + 'px'; }
-      }
-      // ensure booking text truncates instead of wrapping
-      const textEls = document.querySelectorAll('#calendarContainer .cell .booking-client, #calendarContainer .cell .booking-creator');
-      textEls.forEach(el=>{ el.style.whiteSpace = 'nowrap'; el.style.overflow = 'hidden'; el.style.textOverflow = 'ellipsis'; });
-    }catch(e){}
-  });
+      // no-op: removed alignment/height sync logic to keep columns independent
+    });
 
   let currentStart = new Date();
   currentStart.setHours(0,0,0,0);
