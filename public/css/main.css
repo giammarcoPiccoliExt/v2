@@ -18,6 +18,7 @@ body{font-family:Arial;margin:0;padding:0;background:#fff}
 .grid{overflow:auto;white-space:nowrap}
 .row{display:flex;align-items:center}
 .cell{min-width:60px;height:var(--row-height);min-height:var(--row-height);border:1px solid #eee;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;box-sizing:border-box}
+.cell{max-width:220px;max-height:var(--row-height);overflow:hidden}
 .cell .booking-client{margin-bottom:4px}
 .cell.today{background:#e6e6e6}
 .cell .day-week{font-size:11px;font-weight:700;text-transform:lowercase;color:#333}
