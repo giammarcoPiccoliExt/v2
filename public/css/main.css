@@ -124,3 +124,33 @@ body.login-page{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px}
 .login-card button.secondary{background:#eee;color:#111}
 .login-msg{margin-top:10px;color:#b00}
 .login-row{margin-top:8px}
+
+/* Additional helpers inserted by cleanup patch */
+.days-wrap{display:inline-flex}
+.cell.booked{background:#ffcdd2}
+.car-plate{font-size:12px;color:#666}
+
+/* small toast used for inactivity reload and update notifications */
+.toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 14px;border-radius:8px;z-index:9999;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,0.2);display:flex;align-items:center}
+.toast .page-btn{margin-left:10px}
+
+/* month view helpers */
+.weekday-header{text-align:center;font-size:11px;color:#666}
+.day-cell.clickable{cursor:pointer}
+.card-row{display:flex;justify-content:space-between;align-items:center}
+.card-meta .title{font-weight:600;font-size:14px}
+.card-meta .dates{font-size:12px;color:#666}
+.card-meta .creator{font-size:11px;color:#333;margin-top:4px}
+.card-desc{margin-top:6px}
+.page-btn.danger{color:#900}
+
+/* settings helpers */
+.device-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.device-left{flex:1}
+.device-id{font-size:12px;color:#333}
+.device-name-input{width:100%;margin-top:6px;padding:6px;border:1px solid #e6e6e6;border-radius:6px}
+.device-actions{display:flex;gap:6px;flex-shrink:0;margin-left:12px}
+.pass-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.pass-row .info{flex:1}
+.swatch-btn{width:28px;height:28px;padding:0;border-radius:6px;border:1px solid #ccc;background:#fff}
+.swatch-btn.selected{outline:3px solid #333}

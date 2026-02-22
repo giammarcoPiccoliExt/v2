@@ -10,7 +10,16 @@ export async function initSettings(){
       list.innerHTML = '';
       cars.forEach(c=>{
         const el = document.createElement('div'); el.className='car-card';
-        el.innerHTML = `<div class="color-swatch" style="background:${c.color||'#ddd'}"></div><div class="car-info"><strong>${c.name}</strong><div>${c.plate||''}</div></div><div class="car-actions"><button data-id="${c.id}" class="page-btn edit">Modifica</button><button data-id="${c.id}" class="page-btn del">Elimina</button></div>`;
+        const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
+        const info = document.createElement('div'); info.className = 'car-info';
+        const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
+        const plateEl = document.createElement('div'); plateEl.textContent = c.plate || '';
+        info.appendChild(nameEl); info.appendChild(plateEl);
+        const actions = document.createElement('div'); actions.className = 'car-actions';
+        const editBtn = document.createElement('button'); editBtn.className = 'page-btn edit'; editBtn.dataset.id = c.id; editBtn.textContent = 'Modifica';
+        const delBtn = document.createElement('button'); delBtn.className = 'page-btn del'; delBtn.dataset.id = c.id; delBtn.textContent = 'Elimina';
+        actions.appendChild(editBtn); actions.appendChild(delBtn);
+        el.appendChild(sw); el.appendChild(info); el.appendChild(actions);
         list.appendChild(el);
       });
     }catch(e){ console.error('load cars', e); }
@@ -38,7 +47,7 @@ export async function initSettings(){
       name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||''; price.value = car.price_per_day||'';
       const form = modal.querySelector('form'); form.setAttribute('data-edit-id', id);
       renderSwatches(color.value || '#ffffff');
-      modal.style.display='flex';
+      modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
         const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, price_per_day: price.value };
@@ -56,7 +65,7 @@ export async function initSettings(){
         const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
         if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
         if(!res.ok){ alert('Aggiornamento fallito'); return; }
-        modal.style.display='none'; form.removeEventListener('submit', submit); load();
+        modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
       form.addEventListener('submit', submit);
     }
@@ -75,7 +84,7 @@ export async function initSettings(){
       form.querySelector('select[name="size"]').value = 'normal';
       form.querySelector('input[name="price_per_day"]').value = '';
       renderSwatches('#ffffff');
-      modal.style.display='flex';
+      modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
         const data = new FormData(form); const body = Object.fromEntries(data.entries());
@@ -97,7 +106,7 @@ export async function initSettings(){
         const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
         if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
         if(!res.ok){ alert('Salvataggio fallito'); return; }
-        modal.style.display='none'; form.removeEventListener('submit', submit); load();
+        modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
       form.addEventListener('submit', submit);
     });
@@ -108,47 +117,47 @@ export async function initSettings(){
 
   async function loadDevices(){
     try{
-      const devs = await fetchJson('/api/devices');
-      devicesModalList.innerHTML = '';
-      devs.forEach(d=>{
-          const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='8px 0';
-          const buttons = [];
-          // Save (rename) always
-          buttons.push('<button class="saveName page-btn">Salva</button>');
-          if(d.approved===1){
-            // show Remove only
-            buttons.push('<button class="remove page-btn">Remove</button>');
-          } else {
-            // show Approve only
-            buttons.push('<button class="approve page-btn">Approve</button>');
-          }
-          el.innerHTML = `<div style="flex:1"><div style="font-size:12px;color:#333"><strong>${d.id}</strong></div><input data-id="${d.id}" class="device-name-input" value="${d.name||''}" style="width:100%;margin-top:6px" placeholder="Nome dispositivo" /></div><div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px">${buttons.join('')}</div>`;
-          const saveBtn = el.querySelector('.saveName');
-          const approve = el.querySelector('.approve');
-          const remove = el.querySelector('.remove');
-          const input = el.querySelector('.device-name-input');
-          saveBtn.addEventListener('click', async ()=>{ const name = input.value||''; await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'rename', name }) }); loadDevices(); });
-          if(approve) approve.addEventListener('click', async ()=>{ await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'approve' }) }); loadDevices(); });
-          if(remove) remove.addEventListener('click', async ()=>{ if(!confirm('Rimuovere il dispositivo?')) return; await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'remove' }) }); loadDevices(); });
-          devicesModalList.appendChild(el);
-        });
+          const devs = await fetchJson('/api/devices');
+          devicesModalList.innerHTML = '';
+          devs.forEach(d=>{
+              const el = document.createElement('div'); el.className = 'device-row';
+              const left = document.createElement('div'); left.className = 'device-left';
+              const idDiv = document.createElement('div'); idDiv.className = 'device-id'; idDiv.innerHTML = `<strong>${d.id}</strong>`;
+              const input = document.createElement('input'); input.dataset.id = d.id; input.className = 'device-name-input'; input.value = d.name||''; input.placeholder = 'Nome dispositivo';
+              left.appendChild(idDiv); left.appendChild(input);
+              const actions = document.createElement('div'); actions.className = 'device-actions';
+              const saveBtn = document.createElement('button'); saveBtn.className = 'saveName page-btn'; saveBtn.textContent = 'Salva';
+              actions.appendChild(saveBtn);
+              if(d.approved===1){ const remove = document.createElement('button'); remove.className = 'remove page-btn'; remove.textContent = 'Remove'; actions.appendChild(remove); }
+              else { const approve = document.createElement('button'); approve.className = 'approve page-btn'; approve.textContent = 'Approve'; actions.appendChild(approve); }
+              el.appendChild(left); el.appendChild(actions);
+              saveBtn.addEventListener('click', async ()=>{ const name = input.value||''; await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'rename', name }) }); loadDevices(); });
+              const approveBtn = actions.querySelector('.approve'); if(approveBtn) approveBtn.addEventListener('click', async ()=>{ await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'approve' }) }); loadDevices(); });
+              const removeBtn = actions.querySelector('.remove'); if(removeBtn) removeBtn.addEventListener('click', async ()=>{ if(!confirm('Rimuovere il dispositivo?')) return; await fetchRaw(`/api/devices/${encodeURIComponent(d.id)}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'remove' }) }); loadDevices(); });
+              devicesModalList.appendChild(el);
+            });
     }catch(e){ console.error('load devices', e); }
   }
-  passcodesBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.style.display='flex'; loadPasscodes(); });
-  passcodesCloseBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.style.display='none'; });
+  passcodesBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.remove('hidden'); loadPasscodes(); });
+  passcodesCloseBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.add('hidden'); });
   // modal close top-left
-  document.getElementById('usersModalClose')?.addEventListener('click', ()=>{ usersModal.style.display='none'; });
-  document.getElementById('carModalClose')?.addEventListener('click', ()=>{ document.getElementById('carModal').style.display='none'; });
-  document.getElementById('bookingModalClose')?.addEventListener('click', ()=>{ document.getElementById('bookingModal').style.display='none'; });
+  document.getElementById('usersModalClose')?.addEventListener('click', ()=>{ usersModal.classList.add('hidden'); });
+  document.getElementById('carModalClose')?.addEventListener('click', ()=>{ document.getElementById('carModal').classList.add('hidden'); });
+  document.getElementById('bookingModalClose')?.addEventListener('click', ()=>{ document.getElementById('bookingModal').classList.add('hidden'); });
 
   async function loadPasscodes(){
     try{
       const rows = await fetchJson('/api/passcodes');
       passcodesList.innerHTML = '';
       rows.forEach(r=>{
-        const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='8px 0';
-        el.innerHTML = `<div style="flex:1"><strong>${r.name}</strong><div style="font-size:12px;color:#666">id: ${r.id}</div></div><div style="display:flex;gap:6px"><button data-id="${r.id}" class="delPass page-btn">Elimina</button></div>`;
-        const del = el.querySelector('.delPass');
+        const el = document.createElement('div'); el.className = 'pass-row';
+        const info = document.createElement('div'); info.className = 'info';
+        const nameEl = document.createElement('strong'); nameEl.textContent = r.name;
+        const idDiv = document.createElement('div'); idDiv.className = 'card-meta dates'; idDiv.textContent = `id: ${r.id}`;
+        info.appendChild(nameEl); info.appendChild(idDiv);
+        const actions = document.createElement('div'); actions.className = 'device-actions';
+        const del = document.createElement('button'); del.className = 'delPass page-btn'; del.dataset.id = r.id; del.textContent = 'Elimina'; actions.appendChild(del);
+        el.appendChild(info); el.appendChild(actions);
         del.addEventListener('click', async ()=>{ if(!confirm("Eliminare il passcode?")) return; await fetchRaw(`/api/passcodes/${r.id}`, { method:'DELETE' }); loadPasscodes(); });
         passcodesList.appendChild(el);
       });
@@ -167,8 +176,8 @@ export async function initSettings(){
   function renderSwatches(selected){
     const sw = document.getElementById('colorSwatches'); if(!sw) return; sw.innerHTML='';
     colorPalette.forEach(hex=>{
-      const b = document.createElement('button'); b.type='button'; b.className='page-btn'; b.style.width='28px'; b.style.height='28px'; b.style.padding='0'; b.style.borderRadius='6px'; b.style.border='1px solid #ccc'; b.style.background=hex;
-      if(hex===selected) b.style.outline='3px solid #333';
+      const b = document.createElement('button'); b.type='button'; b.className='swatch-btn'; b.style.background = hex;
+      if(hex===selected) b.classList.add('selected');
       b.addEventListener('click', ()=>{ document.querySelector('#carModal input[name="color"]').value = hex; renderSwatches(hex); });
       sw.appendChild(b);
     });
@@ -177,11 +186,11 @@ export async function initSettings(){
   // when car modal shows, initialize swatches and wire cancel/delete
   const carModal = document.getElementById('carModal');
   carModal?.addEventListener('show', ()=>{ renderSwatches('#ffffff'); });
-  document.getElementById('carCancelBtn')?.addEventListener('click', ()=>{ carModal.style.display='none'; });
+  document.getElementById('carCancelBtn')?.addEventListener('click', ()=>{ carModal.classList.add('hidden'); });
   // delete in modal
   document.getElementById('carDeleteBtn')?.addEventListener('click', async ()=>{
     const id = document.querySelector('#carModalForm [data-edit-id]')?.getAttribute('data-edit-id');
-    if(!id) return; if(!confirm("Eliminare l'auto?")) return; await fetchRaw(`/api/cars/${id}`, { method:'DELETE' }); carModal.style.display='none'; load();
+    if(!id) return; if(!confirm("Eliminare l'auto?")) return; await fetchRaw(`/api/cars/${id}`, { method:'DELETE' }); carModal.classList.add('hidden'); load();
   });
 
   load();

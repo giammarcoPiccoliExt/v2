@@ -39,7 +39,12 @@ export function initBookings(){
     legend.innerHTML = '';
     cars.forEach(c=>{
       const el = document.createElement('div'); el.className='car-card';
-      el.innerHTML = `<div class="color-swatch" style="background:${c.color||'#ddd'}"></div><div class="car-info"><strong>${c.name}</strong><div style="font-size:12px;color:#666">${c.plate||''}</div></div>`;
+      const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
+      const info = document.createElement('div'); info.className = 'car-info';
+      const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
+      const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = c.plate || '';
+      info.appendChild(nameEl); info.appendChild(plateEl);
+      el.appendChild(sw); el.appendChild(info);
       legend.appendChild(el);
     });
 
@@ -57,7 +62,7 @@ export function initBookings(){
       const grid = document.createElement('div'); grid.className = 'month-grid';
       // week day headers (Italian)
       const weekDays = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-      weekDays.forEach(w=>{ const h = document.createElement('div'); h.style.textAlign='center'; h.style.fontSize='11px'; h.style.color='#666'; h.textContent = w; grid.appendChild(h); });
+      weekDays.forEach(w=>{ const h = document.createElement('div'); h.className = 'weekday-header'; h.textContent = w; grid.appendChild(h); });
 
       const firstWeekday = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).getDay();
       const days = new Date(monthStart.getFullYear(), monthStart.getMonth()+1, 0).getDate();
@@ -97,7 +102,7 @@ export function initBookings(){
         if(dateKey === todayIso) cell.classList.add('today');
 
         // click to open day bookings modal
-        cell.style.cursor = 'pointer';
+        cell.classList.add('clickable');
         cell.addEventListener('click', ()=>{ openDayBookings(dateKey, cars, bookings); });
         grid.appendChild(cell);
       }
@@ -131,7 +136,7 @@ export function initBookings(){
 
   newBookingBtn?.addEventListener('click', ()=>{
     // reuse booking modal if present
-    const modal = document.getElementById('bookingModal'); if(modal) modal.style.display='flex';
+    const modal = document.getElementById('bookingModal'); if(modal) modal.classList.remove('hidden');
   });
 
   // day bookings modal open
@@ -151,20 +156,32 @@ export function initBookings(){
       // find creator
       const creatorName = bk.creator_name || 'Utente';
       const clientLabel = bk.client_name || bk.title || '';
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:14px">${clientLabel?('- '+clientLabel):car?car.name:'?'} </div><div style="font-size:12px;color:#666">${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}</div><div style="font-size:11px;color:#333;margin-top:4px">${creatorName}</div></div><div style="display:flex;gap:6px"><button class="page-btn editBooking">Modifica</button><button class="page-btn delBooking" style="color:#900">Elimina</button></div></div><div style="margin-top:6px">${bk.description||''}</div>`;
-      const editBtn = card.querySelector('.editBooking');
-      const delBtn = card.querySelector('.delBooking');
+        // build card markup without inline styles
+        const row = document.createElement('div'); row.className = 'card-row';
+        const meta = document.createElement('div'); meta.className = 'card-meta';
+        const titleDiv = document.createElement('div'); titleDiv.className = 'title'; titleDiv.textContent = clientLabel ? ('- '+clientLabel) : (car ? car.name : '?');
+        const datesDiv = document.createElement('div'); datesDiv.className = 'dates'; datesDiv.textContent = `${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}`;
+        const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName;
+        meta.appendChild(titleDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
+        const actions = document.createElement('div'); actions.className = 'device-actions';
+        const editBtn = document.createElement('button'); editBtn.className = 'page-btn editBooking'; editBtn.textContent = 'Modifica';
+        const delBtn = document.createElement('button'); delBtn.className = 'page-btn delBooking danger'; delBtn.textContent = 'Elimina';
+        actions.appendChild(editBtn); actions.appendChild(delBtn);
+        row.appendChild(meta); row.appendChild(actions);
+        card.appendChild(row);
+        const desc = document.createElement('div'); desc.className = 'card-desc'; desc.innerHTML = bk.description || '';
+        card.appendChild(desc);
       editBtn.addEventListener('click', ()=>{ openEditBooking(bk, cars); });
       delBtn.addEventListener('click', async ()=>{
         if(!confirm('Eliminare la prenotazione?')) return;
         const res = await fetchRaw(`/api/bookings/${bk.id}`, { method:'DELETE' });
-        if(res.ok){ alert('Eliminato'); modal.style.display='none'; render(); }
+        if(res.ok){ alert('Eliminato'); modal.classList.add('hidden'); render(); }
         else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
       });
       list.appendChild(card);
     });
-    document.getElementById('dayBookingsClose')?.addEventListener('click', ()=>{ modal.style.display='none'; });
-    modal.style.display='flex';
+    document.getElementById('dayBookingsClose')?.addEventListener('click', ()=>{ modal.classList.add('hidden'); });
+    modal.classList.remove('hidden');
   }
 
   // open booking modal to edit existing booking
@@ -184,12 +201,12 @@ export function initBookings(){
       const data = new FormData(form); const body = Object.fromEntries(data.entries());
       const payload = { car_id: parseInt(body.car_id), start_iso: body.start_date+'T00:00:00Z', end_iso: body.end_date+'T23:59:59Z', title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
       const res = await fetchRaw(`/api/bookings/${bk.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
-      if(res.ok){ alert('Aggiornato'); modal.style.display='none'; render(); form.removeEventListener('submit', onSubmit); }
+      if(res.ok){ alert('Aggiornato'); modal.classList.add('hidden'); render(); form.removeEventListener('submit', onSubmit); }
       else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
     };
     form.addEventListener('submit', onSubmit);
-    document.getElementById('bookingCancelBtn').onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').style.display='none'; };
-    modal.style.display='flex';
+    document.getElementById('bookingCancelBtn').onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
+    modal.classList.remove('hidden');
   }
 
   // refresh on realtime booking events

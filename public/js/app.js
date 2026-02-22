@@ -85,15 +85,12 @@ async function start(){
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) reset(); });
     let reloadWarningHandle = null;
     function showReloadWarning(seconds){
-      // create or reuse notification element
+      // create or reuse notification element (uses .toast styles)
       let el = document.getElementById('reloadWarning');
       if(!el){
-        el = document.createElement('div'); el.id = 'reloadWarning';
-        el.style.position = 'fixed'; el.style.left = '50%'; el.style.top = '12px'; el.style.transform = 'translateX(-50%)';
-        el.style.background = 'rgba(0,0,0,0.85)'; el.style.color = '#fff'; el.style.padding = '10px 14px'; el.style.borderRadius = '8px';
-        el.style.zIndex = 9999; el.style.fontSize = '13px'; el.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+        el = document.createElement('div'); el.id = 'reloadWarning'; el.className = 'toast';
         const txt = document.createElement('span'); txt.id = 'reloadWarningText'; el.appendChild(txt);
-        const btn = document.createElement('button'); btn.textContent = 'Annulla'; btn.style.marginLeft = '10px'; btn.className = 'page-btn'; btn.addEventListener('click', ()=>{ cancelReloadWarning(); });
+        const btn = document.createElement('button'); btn.textContent = 'Annulla'; btn.className = 'page-btn'; btn.addEventListener('click', ()=>{ cancelReloadWarning(); });
         el.appendChild(btn);
         document.body.appendChild(el);
       }
@@ -116,7 +113,7 @@ async function start(){
       try{
         // do not reload if booking modal is open
         const bookingModal = document.getElementById('bookingModal');
-        const modalOpen = bookingModal && bookingModal.style && bookingModal.style.display && bookingModal.style.display !== 'none';
+        const modalOpen = bookingModal && !bookingModal.classList.contains('hidden');
         if(modalOpen) return;
         if(Date.now() - lastActivity > 2 * 60 * 1000){
           // show 5s warning then reload
@@ -131,17 +128,17 @@ async function start(){
     let modalShown = false;
     function ensureModal(){
       if(document.getElementById('passcodePrompt')) return document.getElementById('passcodePrompt');
-      const wrap = document.createElement('div'); wrap.id = 'passcodePrompt';
-      wrap.style.position = 'fixed'; wrap.style.left = '0'; wrap.style.top = '0'; wrap.style.right = '0'; wrap.style.bottom = '0'; wrap.style.background = 'rgba(0,0,0,0.45)'; wrap.style.display = 'flex'; wrap.style.alignItems = 'center'; wrap.style.justifyContent = 'center'; wrap.style.zIndex = 10000;
-      const box = document.createElement('div'); box.style.background = '#fff'; box.style.padding = '14px'; box.style.borderRadius = '8px'; box.style.minWidth = '320px'; box.style.boxShadow = '0 12px 30px rgba(0,0,0,0.15)';
-      box.innerHTML = `<h4 style="margin:0 0 8px 0">Passcode richiesto</h4><div style="margin-bottom:8px">Inserisci la password dell'admin per abilitare modifiche alle prenotazioni.</div>`;
-      const input = document.createElement('input'); input.type = 'password'; input.placeholder = 'Password'; input.style.width = '100%'; input.style.padding = '8px'; input.style.marginBottom = '8px'; input.style.boxSizing = 'border-box';
-      const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.justifyContent='flex-end';
+      const wrap = document.createElement('div'); wrap.id = 'passcodePrompt'; wrap.className = 'modal hidden';
+      const box = document.createElement('div'); box.className = 'modal-content';
+      const header = document.createElement('h4'); header.textContent = 'Passcode richiesto'; box.appendChild(header);
+      const desc = document.createElement('div'); desc.style.marginBottom = '8px'; desc.textContent = 'Inserisci la password dell\'admin per abilitare modifiche alle prenotazioni.'; box.appendChild(desc);
+      const input = document.createElement('input'); input.type = 'password'; input.placeholder = 'Password'; input.className = 'pass-input';
+      const actions = document.createElement('div'); actions.className = 'actions';
       const cancel = document.createElement('button'); cancel.className='page-btn'; cancel.textContent='Chiudi';
       const submit = document.createElement('button'); submit.className='page-btn primary'; submit.textContent='Invia';
       actions.appendChild(cancel); actions.appendChild(submit);
       box.appendChild(input); box.appendChild(actions); wrap.appendChild(box); document.body.appendChild(wrap);
-      cancel.addEventListener('click', ()=>{ wrap.style.display='none'; modalShown=false; });
+      cancel.addEventListener('click', ()=>{ wrap.classList.add('hidden'); modalShown=false; });
       submit.addEventListener('click', async ()=>{
         const pw = input.value||'';
         if(!pw) return alert('Inserisci la password');
@@ -150,7 +147,7 @@ async function start(){
           if(!r.ok){ const t = await r.text(); alert('Accesso fallito'); return; }
           const j = await r.json();
           if(j.token) localStorage.setItem('passcode_token', j.token);
-          wrap.style.display='none'; modalShown=false;
+          wrap.classList.add('hidden'); modalShown=false;
         }catch(e){ alert('Errore di rete'); }
       });
       return wrap;
@@ -160,9 +157,9 @@ async function start(){
       try{
         const token = localStorage.getItem('passcode_token');
         const res = await fetch('/api/auth/can_write', { headers: token ? { Authorization: 'Bearer '+token } : {} });
-        if(res.ok){ /* has write permission */ if(modalShown){ const el = document.getElementById('passcodePrompt'); if(el) el.style.display='none'; modalShown = false; } return; }
+        if(res.ok){ /* has write permission */ if(modalShown){ const el = document.getElementById('passcodePrompt'); if(el) el.classList.add('hidden'); modalShown = false; } return; }
         // not allowed -> ask for password
-        if(!modalShown){ const m = ensureModal(); m.style.display='flex'; modalShown = true; }
+        if(!modalShown){ const m = ensureModal(); m.classList.remove('hidden'); modalShown = true; }
       }catch(e){ /* network error - don't spam modal */ }
     }
     check(); setInterval(check, 10 * 1000);
