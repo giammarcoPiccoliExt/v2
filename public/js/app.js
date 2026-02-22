@@ -148,6 +148,7 @@ async function start(){
           const j = await r.json();
           if(j.token) localStorage.setItem('passcode_token', j.token);
           wrap.classList.add('hidden'); modalShown=false;
+          try{ location.reload(); }catch(e){}
         }catch(e){ alert('Errore di rete'); }
       });
       return wrap;

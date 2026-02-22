@@ -51,15 +51,17 @@ export async function initSettings(){
       const submit = async (e)=>{
         e.preventDefault();
         const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, price_per_day: price.value };
-        // require all fields
-        if(!body.name || !body.color || !body.plate || !body.size || !body.price_per_day){
-          alert('Compila tutti i campi obbligatori (nome, colore, targa, dimensione, prezzo).');
+        // require name, plate and size only (price optional, color may duplicate)
+        const nameNorm = (body.name||'').trim();
+        const plateNorm = (body.plate||'').toUpperCase();
+        if(!nameNorm || !plateNorm || !body.size){
+          alert('Compila i campi obbligatori: nome, targa e dimensione.');
           return;
         }
-        // client-side duplicate check
+        // client-side duplicate check (exclude current id)
         try{
           const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => (x.id != id) && ( (x.name||'').trim().toLowerCase() === (body.name||'').toLowerCase() || ((x.plate||'').toUpperCase() && body.plate && (x.plate||'').toUpperCase() === body.plate) ));
+          const conflict = existing.find(x => (x.id != id) && ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
           if(conflict){ alert('Errore: Nome o targa già esistente per un\'altra auto.'); return; }
         }catch(e){ /* ignore and continue to server validation */ }
         const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
@@ -90,17 +92,17 @@ export async function initSettings(){
         const data = new FormData(form); const body = Object.fromEntries(data.entries());
         // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
-        // require all fields
-        if(!(body.name && body.color && body.plate && body.size && body.price_per_day)){
-          alert('Compila tutti i campi obbligatori (nome, colore, targa, dimensione, prezzo).');
+        // require name, plate and size only; price optional, color may duplicate
+        const nameNorm = (body.name||'').trim();
+        const plateNorm = (body.plate||'').toUpperCase();
+        if(!nameNorm || !plateNorm || !body.size){
+          alert('Compila i campi obbligatori: nome, targa e dimensione.');
           return;
         }
         // client-side duplicate check
         try{
           const existing = await fetchJson('/api/cars');
-          const nameNorm = (body.name||'').trim().toLowerCase();
-          const plateNorm = (body.plate||'').toUpperCase();
-          const conflict = existing.find(x => ( (x.name||'').trim().toLowerCase() === nameNorm ) || ( plateNorm && (x.plate||'').toUpperCase() === plateNorm ));
+          const conflict = existing.find(x => ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
           if(conflict){ alert('Errore: Nome o targa già esistente.'); return; }
         }catch(e){ /* ignore and rely on server */ }
         const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
