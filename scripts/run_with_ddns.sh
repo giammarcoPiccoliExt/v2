@@ -7,6 +7,8 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="${LOG_DIR:-$DIR/logs}"
 mkdir -p "$LOG_DIR"
+# ensure ddns log exists so tail -F won't fail
+touch "$LOG_DIR/ddns.log"
 
 echo "=== run_with_ddns start $(date -Iseconds) ===" | tee -a "$LOG_DIR/run.log"
 

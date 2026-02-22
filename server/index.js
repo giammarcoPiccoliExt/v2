@@ -232,29 +232,15 @@ server.listen(PORT, () => {
   console.log(`${usePlainHttp ? 'HTTP' : 'HTTPS'} server listening on port ${PORT}`);
 });
 
-// start DDNS updater
-ddns.startDDNS(config);
+// start DDNS updater only if configured
+try {
+  if (config.ddns && config.ddns.provider) ddns.startDDNS(config);
+} catch (e) { console.error('DDNS start error', e.message); }
 
 // export for electron control
 module.exports = { server, shutdown: () => server.close() };
 
-// --- VAPID keys setup ---
-const vapidPath = path.join(__dirname, '..', 'certs', 'vapid.json');
-let vapid;
-if (fs.existsSync(vapidPath)) {
-  vapid = JSON.parse(fs.readFileSync(vapidPath));
-} else {
-  vapid = webpush.generateVAPIDKeys();
-  fs.writeFileSync(vapidPath, JSON.stringify(vapid, null, 2));
-}
-webpush.setVapidDetails(
-  `mailto:admin@${config.ddns?.domain || 'localhost'}`,
-  vapid.publicKey,
-  vapid.privateKey
-);
-
-// store push subscription
-// push subscription endpoint removed (web-push disabled)
+// Web Push (VAPID) disabled — push notifications removed for this deployment
 
 // devices management
 // devices system removed: access restricted to passcode sessions only
@@ -301,6 +287,19 @@ app.post('/api/login', (req, res) => {
     }
     return res.status(401).json({ error: 'invalid password' });
   });
+});
+
+// Admin: reboot the machine (requires passcode session)
+app.post('/api/admin/reboot', requireSession, (req, res) => {
+  const { spawn } = require('child_process');
+  // IMPORTANT: ensure the service user can run shutdown/reboot without password via sudoers
+  try {
+    const child = spawn('sudo', ['/sbin/shutdown', '-r', 'now'], { detached: true, stdio: 'ignore' });
+    child.unref();
+    res.json({ ok: true, msg: 'rebooting' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // override booking creation to require passcode session

@@ -4,12 +4,6 @@
     "keyPath": "certs/key.pem",
     "certPath": "certs/cert.pem"
   },
-  "ddns": {
-    "provider": "noip",
-    "username": "info.giammarco@gmail.com",
-    "password": "Lonelyday24!",
-    "domain": "prenotazioniauto.ddns.net",
-    "updateIntervalMinutes": 10
-  },
+  "usePlainHttp": true,
   "healthCheckIntervalMs": 5000
 }
