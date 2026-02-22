@@ -1,6 +1,8 @@
 <div id="bookings" class="page">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-    <h3 style="margin:0">Prenotazioni</h3>
+    <div>
+      <button id="filterSizeBtn" class="page-btn">Filtra</button>
+    </div>
     <div>
       <button id="newBookingBtnBookings" class="page-btn primary"><span class="icon">＋</span><span>Nuova Prenotazione</span></button>
     </div>
@@ -8,7 +10,6 @@
 
     <div class="bookings-body">
       <div class="sidebar">
-        <button id="filterSizeBtn" class="page-btn">Filtra</button>
         <div id="machinesLegend" class="cars-col"></div>
       </div>
       <div class="calendar-wrapper">
@@ -19,9 +20,9 @@
     /* left sidebar fixed and vertically centered; calendar fills remaining width */
     .bookings-body{display:flex;gap:12px}
     .sidebar{width:20vw;min-width:140px;flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:12px;position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:10}
-    .cars-col{width:100%}
+    .cars-col{width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:flex-start}
     .calendar-wrapper{overflow:auto;flex:1;margin-left:calc(20vw + 36px)}
-    .cars-col .car-card{background:#fff}
+    .cars-col .car-card{background:#fff;display:inline-flex;flex:0 0 auto}
     /* month block fills available width and prevents horizontal overflow */
     .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
     .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
