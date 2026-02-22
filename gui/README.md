@@ -34,3 +34,21 @@ npm run pack:win
 Notes:
 - `sqlite3` is a native module: run `npx electron-rebuild` before running or packaging.
 - When the app is packaged, the GUI will use the packaged EXE as default target for shortcuts.
+
+Deploy helper (Linux VM)
+------------------------
+There is a helper script and systemd unit in `scripts/` to run the server and a DDNS client on startup. Steps (on the VM):
+
+```bash
+# copy service unit (adjust paths if your user/home differs)
+sudo cp scripts/carbooking.service /etc/systemd/system/carbooking.service
+sudo chmod 644 /etc/systemd/system/carbooking.service
+# ensure the run script is executable
+sudo chmod +x /home/carapp/carbooking/scripts/run_with_ddns.sh
+# reload and enable
+sudo systemctl daemon-reload
+sudo systemctl enable --now carbooking
+sudo systemctl status carbooking
+```
+
+Logs are written to `~/carbooking/logs/` and also available via `journalctl -u carbooking -f`.

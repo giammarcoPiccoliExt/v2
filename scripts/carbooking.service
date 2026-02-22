@@ -1,0 +1,16 @@
+[Unit]
+Description=CarBooking server (Node) and DDNS launcher
+After=network.target
+
+[Service]
+Type=simple
+User=carapp
+WorkingDirectory=/home/carapp/carbooking
+ExecStart=/home/carapp/carbooking/scripts/run_with_ddns.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
