@@ -19,7 +19,9 @@ export async function initHome(){
   function renderCalendar(cars, bookings, startDate){
     container.innerHTML='';
     carsCol.innerHTML='';
-    // no placeholder alignment — left column independent from calendar rows
+    // add a sticky placeholder header in the cars column
+    const placeholder = document.createElement('div'); placeholder.className = 'car-card header-placeholder'; placeholder.innerHTML = '&nbsp;';
+    carsCol.appendChild(placeholder);
     const days = [];
     const PREV_DAYS = 5;
     const FUTURE_DAYS = 30; // show 30 days into the future
@@ -69,7 +71,40 @@ export async function initHome(){
       r.appendChild(daysWrap);
       container.appendChild(r);
     });
-    // no alignment/enforcement logic here — keep cells independent
+    // adjust booking text to fit inside fixed-height cells by scaling font-size
+    try{
+      setTimeout(()=>{
+        const cells = container.querySelectorAll('.cell');
+        cells.forEach(cell=>{
+          const client = cell.querySelector('.booking-client');
+          const creator = cell.querySelector('.booking-creator');
+          if(!client) return;
+          // reset to CSS defaults
+          client.style.fontSize = '';
+          if(creator) creator.style.fontSize = '';
+
+          const maxH = cell.clientHeight - 4; // small padding buffer
+          let clientSize = parseFloat(getComputedStyle(client).fontSize) || 14;
+          let creatorSize = creator ? (parseFloat(getComputedStyle(creator).fontSize) || 11) : 0;
+          // shrink both until combined height fits (or hit minimums)
+          const MIN = 8;
+          function combinedHeight(){
+            // measure after layout
+            return (client.getBoundingClientRect().height || client.offsetHeight) + (creator ? (creator.getBoundingClientRect().height || creator.offsetHeight) : 0);
+          }
+          // loop with safeguard
+          let loops = 0;
+          while(combinedHeight() > cell.clientHeight && loops < 30 && (clientSize > MIN || creatorSize > MIN)){
+            if(clientSize > MIN){ clientSize = Math.max(MIN, clientSize - 1); client.style.fontSize = clientSize + 'px'; }
+            if(creator && creatorSize > MIN){ creatorSize = Math.max(MIN, creatorSize - 0.8); creator.style.fontSize = creatorSize + 'px'; }
+            loops++;
+          }
+          // fallback: apply ellipsis if still overflowing
+          client.style.whiteSpace = 'nowrap'; client.style.overflow = 'hidden'; client.style.textOverflow = 'ellipsis';
+          if(creator){ creator.style.whiteSpace = 'nowrap'; creator.style.overflow = 'hidden'; creator.style.textOverflow = 'ellipsis'; }
+        });
+      }, 30);
+    }catch(e){/* ignore */}
 
     return days;
   }
