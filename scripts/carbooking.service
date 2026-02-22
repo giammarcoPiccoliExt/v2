@@ -6,7 +6,9 @@ After=network.target
 Type=simple
 User=carapp
 WorkingDirectory=/home/carapp/carbooking
-ExecStart=/home/carapp/carbooking/scripts/run_with_ddns.sh
+# Use an explicit shell to avoid ExecStart failures due to missing shebang/executable bit
+Environment=PATH=/usr/bin:/bin
+ExecStart=/bin/bash /home/carapp/carbooking/scripts/run_with_ddns.sh
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
