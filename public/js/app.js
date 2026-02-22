@@ -125,6 +125,48 @@ async function start(){
       }catch(e){/* ignore */}
     }, 10 * 1000);
   })();
+
+  // Every 10s check if client has write permission for bookings; if not, request passcode
+  (function writePermissionPoll(){
+    let modalShown = false;
+    function ensureModal(){
+      if(document.getElementById('passcodePrompt')) return document.getElementById('passcodePrompt');
+      const wrap = document.createElement('div'); wrap.id = 'passcodePrompt';
+      wrap.style.position = 'fixed'; wrap.style.left = '0'; wrap.style.top = '0'; wrap.style.right = '0'; wrap.style.bottom = '0'; wrap.style.background = 'rgba(0,0,0,0.45)'; wrap.style.display = 'flex'; wrap.style.alignItems = 'center'; wrap.style.justifyContent = 'center'; wrap.style.zIndex = 10000;
+      const box = document.createElement('div'); box.style.background = '#fff'; box.style.padding = '14px'; box.style.borderRadius = '8px'; box.style.minWidth = '320px'; box.style.boxShadow = '0 12px 30px rgba(0,0,0,0.15)';
+      box.innerHTML = `<h4 style="margin:0 0 8px 0">Passcode richiesto</h4><div style="margin-bottom:8px">Inserisci la password dell'admin per abilitare modifiche alle prenotazioni.</div>`;
+      const input = document.createElement('input'); input.type = 'password'; input.placeholder = 'Password'; input.style.width = '100%'; input.style.padding = '8px'; input.style.marginBottom = '8px'; input.style.boxSizing = 'border-box';
+      const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.justifyContent='flex-end';
+      const cancel = document.createElement('button'); cancel.className='page-btn'; cancel.textContent='Chiudi';
+      const submit = document.createElement('button'); submit.className='page-btn primary'; submit.textContent='Invia';
+      actions.appendChild(cancel); actions.appendChild(submit);
+      box.appendChild(input); box.appendChild(actions); wrap.appendChild(box); document.body.appendChild(wrap);
+      cancel.addEventListener('click', ()=>{ wrap.style.display='none'; modalShown=false; });
+      submit.addEventListener('click', async ()=>{
+        const pw = input.value||'';
+        if(!pw) return alert('Inserisci la password');
+        try{
+          const r = await fetch('/api/login', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ password: pw }) });
+          if(!r.ok){ const t = await r.text(); alert('Accesso fallito'); return; }
+          const j = await r.json();
+          if(j.token) localStorage.setItem('passcode_token', j.token);
+          wrap.style.display='none'; modalShown=false;
+        }catch(e){ alert('Errore di rete'); }
+      });
+      return wrap;
+    }
+
+    async function check(){
+      try{
+        const token = localStorage.getItem('passcode_token');
+        const res = await fetch('/api/auth/can_write', { headers: token ? { Authorization: 'Bearer '+token } : {} });
+        if(res.ok){ /* has write permission */ if(modalShown){ const el = document.getElementById('passcodePrompt'); if(el) el.style.display='none'; modalShown = false; } return; }
+        // not allowed -> ask for password
+        if(!modalShown){ const m = ensureModal(); m.style.display='flex'; modalShown = true; }
+      }catch(e){ /* network error - don't spam modal */ }
+    }
+    check(); setInterval(check, 10 * 1000);
+  })();
 }
 
 start().catch(err=>{ console.error('App start error', err); alert('Failed to start app: '+err.message); });

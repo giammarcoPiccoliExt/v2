@@ -411,6 +411,16 @@ app.post('/api/bookings/check', (req, res) => {
   );
 });
 
+// check whether the current Authorization token grants write permission for bookings
+app.get('/api/auth/can_write', (req, res) => {
+  const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
+  if (auth && sessions.has(auth)) {
+    const s = sessions.get(auth);
+    return res.json({ can_write: true, name: s.name });
+  }
+  return res.status(403).json({ can_write: false });
+});
+
 // --- cert renewal: regenerate if older than 90 days ---
 function setupCertRenewal(checkDays = 90) {
   const ms = 24 * 60 * 60 * 1000;
