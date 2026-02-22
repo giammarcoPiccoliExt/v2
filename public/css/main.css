@@ -91,7 +91,7 @@ header{padding:0;margin:0}
     #bookings .bookings-body .sidebar{flex:0 0 15%;max-width:15%;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;padding-right:8px;background:transparent;z-index:10}
     #bookings .bookings-body .sidebar .home-header{position:sticky;top:0;z-index:11;background:transparent}
     /* calendar sits to the right of the 15% column and can scroll horizontally like home */
-    #bookings .bookings-body .calendar-wrapper{flex:1;margin-left:calc(15% + 24px);overflow:auto}
+    #bookings .bookings-body .calendar-wrapper{flex:1;overflow:auto}
     #bookings .cars-col{display:flex;flex-direction:column;gap:8px}
     #bookings .calendar-col{min-width:900px}
 }
