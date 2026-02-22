@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Server Control</title>
+  <style>
+    body{font-family:Arial;padding:12px}
+    .led{width:18px;height:18px;border-radius:50%;display:inline-block;margin-left:8px;background:#900}
+    button{margin-right:8px}
+  </style>
+</head>
+<body>
+  <div>
+    <button id="startBtn">Start Server</button>
+    <button id="stopBtn">Stop Server</button>
+    Status: <span id="status">unknown</span> <span id="led" class="led"></span>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const status = document.getElementById('status');
+    const led = document.getElementById('led');
+
+    startBtn.addEventListener('click', async ()=>{
+      const res = await ipcRenderer.invoke('start-server');
+      if(res.ok) status.textContent='running';
+      else alert(res.msg || 'failed');
+    });
+
+    stopBtn.addEventListener('click', async ()=>{
+      const res = await ipcRenderer.invoke('stop-server');
+      if(res.ok) status.textContent='stopped';
+      else alert(res.msg || 'failed');
+    });
+
+    function setLed(color){ led.style.background = color==='green' ? '#2e7d32' : '#b71c1c'; status.textContent = color; }
+
+    // poll
+    setInterval(()=>{ ipcRenderer.send('poll-health', 3000); }, 4000);
+    ipcRenderer.on('health', (_, c)=>setLed(c));
+  </script>
+</body>
+</html>

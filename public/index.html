@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendario Auto - Prenotazioni</title>
+  <style>
+    body{font-family:Arial;margin:0;padding:0;background:#fff}
+    .page{display:none;padding:12px}
+    .page.active{display:block}
+    .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:56px;background:#fff;border-top:1px solid #ddd;display:flex}
+    .nav-item{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#777;padding:6px 0}
+    .nav-item .nav-icon{font-size:18px;margin-bottom:2px}
+    .nav-item .nav-label{font-size:12px}
+    .nav-item.active{background:#f0f0f0;color:#222}
+    .nav-item.center{position:relative}
+    .nav-item.center::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:1px;background:#ddd}
+    .nav-item.center::after{content:'';position:absolute;right:0;top:8px;bottom:8px;width:1px;background:#ddd}
+    /* page-level buttons styled like bottom nav (compact) */
+    .page-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#333;font-size:13px}
+    .page-btn .icon{font-size:16px}
+    .page-btn.primary{background:#f0f0f0;border-color:#e0e0e0}
+    .grid{overflow:auto;white-space:nowrap}
+    .row{display:flex;align-items:center}
+    .cell{min-width:60px;height:64px;border:1px solid #eee;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px}
+    .cell .booking-client{margin-bottom:4px}
+    .cell.today{background:#e6e6e6}
+    .cell .day-week{font-size:11px;font-weight:700;text-transform:lowercase;color:#333}
+    .cell .day-date{font-size:12px;color:#333}
+    /* legend uses up to 15% of viewport width (responsive), with sensible min/max */
+    .car-name{width:15vw;max-width:220px;min-width:80px;padding-right:6px;flex:0 0 15vw}
+    .car-name .car-card{display:flex;align-items:center;gap:6px;padding:6px;font-size:13px}
+    .car-name .color-swatch{width:calc(15vw * 0.18);height:calc(15vw * 0.18);max-width:40px;max-height:40px;border-radius:6px;flex:0 0 auto;position:relative}
+    .car-name .color-swatch::after{content:'';position:absolute;left:0;top:0;right:50%;bottom:0;background:rgba(255,255,255,0.45)}
+    .card{border:1px solid #ddd;padding:8px;margin-bottom:8px;border-radius:6px}
+    /* compact card: sizes reduced by ~20% */
+    .car-card{display:flex;align-items:center;gap:6px;padding:5px;border-radius:8px;position:relative;overflow:hidden;border:1px solid #ddd;margin-bottom:8px}
+    /* scale main card swatch relative to viewport but clamp size */
+    /* reduce swatch to ~50% of previous size while keeping min/max limits */
+    .car-card .color-swatch{width:calc(9vw * 0.5);height:calc(9vw * 0.5);max-width:45px;max-height:45px;min-width:10px;min-height:16px;border-radius:6px;flex:0 0 auto;position:relative}
+    header{padding-bottom:56px}
+    .modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center}
+    .modal-content{background:#fff;padding:12px;border-radius:8px;min-width:280px;position:relative}
+    .modal-close{position:absolute;left:8px;top:8px;background:transparent;border:none;font-size:16px;cursor:pointer}
+    /* override older duplicate rule: keep compact layout */
+    .car-card{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;position:relative;overflow:hidden;border:1px solid #ddd;margin-bottom:8px}
+    .car-card .color-swatch{width:12px;height:12px;border-radius:6px;flex:0 0 12px;position:relative}
+    .car-card .color-swatch::after{content:'';position:absolute;left:0;top:0;right:50%;bottom:0;background:rgba(255,255,255,0.6)}
+    .car-info{flex:1;padding-left:8px;min-width:0;white-space:nowrap;overflow:visible}
+    .car-actions{display:flex;gap:8px}
+    .booking-client{font-size:14px;font-weight:600;line-height:1.1}
+    .booking-creator{font-size:11px;color:#333;margin-top:2px}
+    /* Global modal & input styles (shared) */
+    .modal .modal-content{background:#fff;padding:14px;border-radius:10px;max-width:520px;box-shadow:0 12px 30px rgba(0,0,0,0.12)}
+    .modal .modal-content h4{margin:0 0 8px 0}
+    .modal .modal-content form{display:flex;flex-direction:column;gap:10px}
+    .modal .modal-content .field{display:flex;flex-direction:column;gap:6px}
+    .modal .modal-content label{font-size:13px;color:#333}
+    .modal .modal-content input[type="text"], .modal .modal-content input[type="date"], .modal .modal-content input[type="number"], .modal .modal-content select, .modal .modal-content textarea{
+      padding:10px 12px;border:1px solid #e6e6e6;border-radius:8px;font-size:14px;background:#fff;box-shadow:none;transition:box-shadow .15s,border-color .15s}
+    .modal .modal-content input:focus, .modal .modal-content select:focus, .modal .modal-content textarea:focus{outline:none;border-color:#3b82f6;box-shadow:0 6px 18px rgba(59,130,246,0.08)}
+    .modal .modal-content .actions{display:flex;gap:8px;align-items:center}
+    .modal .modal-content .actions .spacer{flex:1}
+    /* make page buttons consistent */
+    .page-btn{padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#333}
+    .page-btn.primary{background:#f0f6ff;border-color:#d6e4ff}
+  </style>
+</head>
+<body>
+  <header></header>
+  <div id="app"></div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-target="home"><div class="nav-icon">🏠</div><div class="nav-label">Inizio</div></div>
+    <div class="nav-item center" data-target="bookings"><div class="nav-icon">📅</div><div class="nav-label">Prenotazioni</div></div>
+    <div class="nav-item" data-target="settings"><div class="nav-icon">⚙️</div><div class="nav-label">Impostazioni</div></div>
+  </nav>
+
+  <script type="module" src="/js/app.js?v=20260221T0001"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<div id="bookings" class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <h3 style="margin:0">Prenotazioni</h3>
+    <div>
+      <button id="newBookingBtnBookings" class="page-btn primary"><span class="icon">＋</span><span>Nuova Prenotazione</span></button>
+    </div>
+  </div>
+
+    <div class="bookings-body">
+    <div id="machinesLegend" class="cars-col"></div>
+    <div class="calendar-wrapper">
+      <div id="monthView" style="width:100%"></div>
+    </div>
+  </div>
+  <style>
+    /* stacked months: legend on left, calendar fills remaining width */
+    .bookings-body{display:flex;gap:12px;align-items:flex-start}
+    .cars-col{width:20vw;min-width:140px;flex:0 0 20vw}
+    .calendar-wrapper{overflow:auto;flex:1}
+    .cars-col .car-card{position:sticky;top:0;background:#fff}
+    /* month block fills available width and prevents horizontal overflow */
+    .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
+    .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .month-grid .day-cell{width:100%;box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block}
+    .month-grid .day-cell.today{background:#e6e6e6}
+    .month-grid .day-cell .day-label{position:absolute;left:6px;top:4px;font-size:12px;color:#333}
+    .month-grid .day-cell .more-indicator{position:absolute;right:6px;bottom:6px;width:18px;height:18px;border-radius:3px;background:#999;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+    .month-grid .day-cell .dots{position:absolute;right:6px;bottom:6px;display:flex;gap:4px}
+    .month-grid .day-cell .dots span{width:10px;height:10px;border-radius:2px;display:inline-block}
+    /* make day cells 1:2 (width:height = 1:2) */
+    .month-grid .day-cell{aspect-ratio:1 / 2}
+    .month-title{font-weight:600;margin-bottom:6px}
+  </style>
+</div>

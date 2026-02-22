@@ -1,0 +1,15 @@
+{
+  "port": 3000,
+  "ssl": {
+    "keyPath": "certs/key.pem",
+    "certPath": "certs/cert.pem"
+  },
+  "ddns": {
+    "provider": "noip",
+    "username": "your-noip-username",
+    "password": "your-noip-password",
+    "domain": "yourdomain.no-ip.org",
+    "updateIntervalMinutes": 10
+  },
+  "healthCheckIntervalMs": 5000
+}

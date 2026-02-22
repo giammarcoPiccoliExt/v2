@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login</title>
+    <style>
+      body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px}
+      .card{max-width:420px;margin:40px auto;padding:18px;border:1px solid #ddd;border-radius:8px}
+      input{width:100%;padding:8px;margin:6px 0;border:1px solid #ccc;border-radius:6px}
+      .row{display:flex;gap:8px}
+      button{padding:8px 12px;border-radius:6px;border:0;background:#2b7;cursor:pointer}
+      button.secondary{background:#eee;color:#111}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h3>App Login</h3>
+      <p>Enter your passcode to log in. Default passcode is "admin".</p>
+      <input id="pwd" type="password" placeholder="Passcode" />
+      <div style="margin-top:8px" class="row">
+        <button id="loginBtn">Accedi</button>
+        <button id="saveBtn" class="secondary">Salva password</button>
+      </div>
+      <div id="msg" style="margin-top:10px;color:#b00"></div>
+    </div>
+    <script type="module" src="/js/login.js"></script>
+  </body>
+</html>

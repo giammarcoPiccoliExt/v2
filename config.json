@@ -1,0 +1,15 @@
+{
+  "port": 3001,
+  "ssl": {
+    "keyPath": "certs/key.pem",
+    "certPath": "certs/cert.pem"
+  },
+  "ddns": {
+    "provider": "noip",
+    "username": "info.giammarco@gmail.com",
+    "password": "Lonelyday24!",
+    "domain": "prenotazioniauto.ddns.net",
+    "updateIntervalMinutes": 10
+  },
+  "healthCheckIntervalMs": 5000
+}
