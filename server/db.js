@@ -67,6 +67,8 @@ db.serialize(() => {
       created_at TEXT
     )`
   );
+  // ensure passcode names are unique to avoid duplicate default entries on race
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_passcodes_name ON passcodes(name)`);
 });
 
 module.exports = db;

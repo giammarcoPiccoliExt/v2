@@ -209,13 +209,14 @@ function ensureDefaultPasscode() {
     if (err) { console.error('check default passcode error', err.message); return; }
     const count = row && row.c ? row.c : 0;
     if (count === 0) {
-      const defaultName = 'admin';
-      const defaultPass = 'admin';
-      const passhash = hashPassword(defaultPass);
-      db.run('INSERT INTO passcodes (name, passhash, created_at) VALUES (?,?,?)', [defaultName, passhash, new Date().toISOString()], function (err) {
-        if (err) console.error('failed creating default passcode', err.message);
-        else console.log('Created default passcode "admin" (password: admin) with id', this.lastID);
-      });
+        const defaultName = 'admin';
+        const defaultPass = 'admin';
+        const passhash = hashPassword(defaultPass);
+        // use INSERT OR IGNORE in case another process inserts concurrently
+        db.run('INSERT OR IGNORE INTO passcodes (name, passhash, created_at) VALUES (?,?,?)', [defaultName, passhash, new Date().toISOString()], function (err) {
+          if (err) console.error('failed creating default passcode', err.message);
+          else if (this.changes && this.changes > 0) console.log('Created default passcode "admin" (password: admin) with id', this.lastID);
+        });
     } else {
       // existing passcodes found
     }
