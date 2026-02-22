@@ -255,7 +255,7 @@ export async function initHome(){
       refresh();
     };
     form.addEventListener('submit', onSubmit);
-    document.getElementById('bookingCancelBtn').onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
+    document.getElementById('bookingCancelBtn')?.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
   });
 
   refresh();

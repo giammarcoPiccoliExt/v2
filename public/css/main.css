@@ -6,6 +6,7 @@ body{font-family:Arial;margin:0;padding:0;background:#fff}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:56px;background:#fff;border-top:1px solid #ddd;display:flex}
 .nav-item{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#777;padding:6px 0}
 .nav-item .nav-icon{font-size:18px;margin-bottom:2px}
+:root{--row-height:96px; --cell-width:120px; --header-height:56px}
 .nav-item .nav-label{font-size:12px}
 .nav-item.active{background:#f0f0f0;color:#222}
 .nav-item.center{position:relative}
@@ -36,7 +37,7 @@ body{font-family:Arial;margin:0;padding:0;background:#fff}
 header{padding:0;margin:0}
 .modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center}
 .modal-content{background:#fff;padding:12px;border-radius:8px;min-width:280px;position:relative}
-.modal-close{position:absolute;left:8px;top:8px;background:transparent;border:none;font-size:16px;cursor:pointer}
+.modal-close{position:absolute;right:8px;left:auto;top:8px;background:transparent;border:none;font-size:16px;cursor:pointer}
 /* override older duplicate rule: keep compact layout */
 .car-card{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;position:relative;overflow:hidden;border:1px solid #ddd;margin-bottom:8px}
 .car-card .color-swatch{width:12px;height:12px;border-radius:6px;flex:0 0 12px;position:relative}
@@ -97,6 +98,11 @@ header{padding:0;margin:0}
 }
 
 /* helper classes for header and month view */
+.bookings-body{display:flex;gap:12px}
+#bookings .bookings-body .sidebar{max-height:calc(100vh - var(--header-height) - 24px);overflow:auto}
+#bookings .bookings-body .calendar-wrapper{max-width:calc(100% - 15% - 36px);box-sizing:border-box;overflow:auto}
+#bookings .month-wrap, #bookings .month-grid{max-width:100%;box-sizing:border-box}
+
 .bookings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #monthView{width:100%}
 

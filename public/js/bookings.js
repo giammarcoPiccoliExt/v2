@@ -205,7 +205,7 @@ export function initBookings(){
       else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
     };
     form.addEventListener('submit', onSubmit);
-    document.getElementById('bookingCancelBtn').onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
+    document.getElementById('bookingCancelBtn')?.onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
     modal.classList.remove('hidden');
   }
 
