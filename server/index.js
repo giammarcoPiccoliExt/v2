@@ -79,28 +79,40 @@ app.get('/api/cars', (req, res) => {
 
 app.post('/api/cars', requireSession, (req, res) => {
   const { name, color, size, price_per_day, plate } = req.body;
-  db.run(
-    'INSERT INTO cars (name,color,size,price_per_day,plate) VALUES (?,?,?,?,?)',
-    [name, color, size, price_per_day || null, plate || null],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID });
-    }
-  );
+  // check for duplicates (name or plate)
+  const plateVal = plate ? plate : null;
+  db.get('SELECT id FROM cars WHERE name = ? OR (plate IS NOT NULL AND plate = ?) LIMIT 1', [name, plateVal], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
+    db.run(
+      'INSERT INTO cars (name,color,size,price_per_day,plate) VALUES (?,?,?,?,?)',
+      [name, color, size, price_per_day || null, plateVal],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID });
+      }
+    );
+  });
 });
 
 // update car
 app.put('/api/cars/:id', requireSession, (req, res) => {
   const id = req.params.id;
   const { name, color, size, price_per_day, plate } = req.body;
-  db.run(
-    'UPDATE cars SET name=?, color=?, size=?, price_per_day=?, plate=? WHERE id=?',
-    [name, color, size, price_per_day || null, plate || null, id],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ changed: this.changes });
-    }
-  );
+  const plateVal = plate ? plate : null;
+  // check duplicates excluding this id
+  db.get('SELECT id FROM cars WHERE (name = ? OR (plate IS NOT NULL AND plate = ?)) AND id != ? LIMIT 1', [name, plateVal, id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
+    db.run(
+      'UPDATE cars SET name=?, color=?, size=?, price_per_day=?, plate=? WHERE id=?',
+      [name, color, size, price_per_day || null, plateVal, id],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ changed: this.changes });
+      }
+    );
+  });
 });
 
 // delete car

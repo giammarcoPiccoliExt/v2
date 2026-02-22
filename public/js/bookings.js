@@ -4,13 +4,31 @@ export function initBookings(){
   const newBookingBtn = document.getElementById('newBookingBtnBookings');
   const legend = document.getElementById('machinesLegend');
   const monthView = document.getElementById('monthView');
+  const FILTER_KEY = 'car_size_filter';
+  const sizes = ['all','mini','normal','big'];
+  const sizeLabels = { all:'Tutti', mini:'mini', normal:'normale', big:'grande' };
+  function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
+  function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
+  let sizeFilter = getSavedFilter();
+  // filter button: create if missing
+  let filterBtn = document.getElementById('filterSizeBtn');
+  if(!filterBtn){
+    filterBtn = document.createElement('button'); filterBtn.id = 'filterSizeBtn'; filterBtn.className='page-btn';
+    if(legend && legend.parentNode) legend.parentNode.insertBefore(filterBtn, legend);
+    else if(monthView && monthView.parentNode) monthView.parentNode.insertBefore(filterBtn, monthView);
+    else document.body.insertBefore(filterBtn, document.body.firstChild);
+  }
+  function updateFilterBtn(){ filterBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti'; }
+  updateFilterBtn();
+  filterBtn.addEventListener('click', ()=>{ const idx = sizes.indexOf(sizeFilter||'all'); const next = (idx<0 || idx===sizes.length-1)?0:idx+1; sizeFilter = sizes[next]; saveFilter(sizeFilter); updateFilterBtn(); window.dispatchEvent(new CustomEvent('car:filterChanged', { detail: sizeFilter })); render(); });
 
   function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
   function daysInMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
 
   async function render(){
-    const cars = await fetchJson('/api/cars');
+    let cars = await fetchJson('/api/cars');
     const bookings = await fetchJson('/api/bookings');
+    if(sizeFilter && sizeFilter !== 'all') cars = cars.filter(c=> (c.size||'') === sizeFilter);
 
     // legend
     legend.innerHTML = '';
@@ -49,7 +67,9 @@ export function initBookings(){
         cell.appendChild(dayLabel);
 
         // find bookings for that date
-        const dayBookings = bookings.filter(bk=> bk.start_iso.slice(0,10) <= dateKey && bk.end_iso.slice(0,10) >= dateKey);
+        // only include bookings for visible cars (apply size filter)
+        const visibleCarIds = new Set(cars.map(c=>c.id));
+        const dayBookings = bookings.filter(bk=> bk.start_iso.slice(0,10) <= dateKey && bk.end_iso.slice(0,10) >= dateKey && visibleCarIds.has(bk.car_id));
         if(dayBookings.length){
           if(dayBookings.length > 3){
             const more = document.createElement('div'); more.className = 'more-indicator'; more.textContent = '+';
@@ -95,7 +115,8 @@ export function initBookings(){
     if(!modal || !list) return;
     title.textContent = 'Prenotazioni per ' + dateKey;
     list.innerHTML = '';
-    const dayBookings = bookings.filter(bk=> bk.start_iso.slice(0,10) <= dateKey && bk.end_iso.slice(0,10) >= dateKey);
+    const visibleCarIds = new Set(cars.map(c=>c.id));
+    const dayBookings = bookings.filter(bk=> bk.start_iso.slice(0,10) <= dateKey && bk.end_iso.slice(0,10) >= dateKey && visibleCarIds.has(bk.car_id));
     if(dayBookings.length===0){ list.innerHTML = '<div>Nessuna prenotazione</div>'; }
     dayBookings.forEach(bk=>{
       const car = cars.find(c=>c.id===bk.car_id);

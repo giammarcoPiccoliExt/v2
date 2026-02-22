@@ -41,8 +41,21 @@ export async function initSettings(){
       modal.style.display='flex';
       const submit = async (e)=>{
         e.preventDefault();
-        const body = { name: name.value, color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, price_per_day: price.value };
-        await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, price_per_day: price.value };
+        // require all fields
+        if(!body.name || !body.color || !body.plate || !body.size || !body.price_per_day){
+          alert('Compila tutti i campi obbligatori (nome, colore, targa, dimensione, prezzo).');
+          return;
+        }
+        // client-side duplicate check
+        try{
+          const existing = await fetchJson('/api/cars');
+          const conflict = existing.find(x => (x.id != id) && ( (x.name||'').trim().toLowerCase() === (body.name||'').toLowerCase() || ((x.plate||'').toUpperCase() && body.plate && (x.plate||'').toUpperCase() === body.plate) ));
+          if(conflict){ alert('Errore: Nome o targa già esistente per un\'altra auto.'); return; }
+        }catch(e){ /* ignore and continue to server validation */ }
+        const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
+        if(!res.ok){ alert('Aggiornamento fallito'); return; }
         modal.style.display='none'; form.removeEventListener('submit', submit); load();
       };
       form.addEventListener('submit', submit);
@@ -68,7 +81,22 @@ export async function initSettings(){
         const data = new FormData(form); const body = Object.fromEntries(data.entries());
         // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
-        await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+        // require all fields
+        if(!(body.name && body.color && body.plate && body.size && body.price_per_day)){
+          alert('Compila tutti i campi obbligatori (nome, colore, targa, dimensione, prezzo).');
+          return;
+        }
+        // client-side duplicate check
+        try{
+          const existing = await fetchJson('/api/cars');
+          const nameNorm = (body.name||'').trim().toLowerCase();
+          const plateNorm = (body.plate||'').toUpperCase();
+          const conflict = existing.find(x => ( (x.name||'').trim().toLowerCase() === nameNorm ) || ( plateNorm && (x.plate||'').toUpperCase() === plateNorm ));
+          if(conflict){ alert('Errore: Nome o targa già esistente.'); return; }
+        }catch(e){ /* ignore and rely on server */ }
+        const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
+        if(!res.ok){ alert('Salvataggio fallito'); return; }
         modal.style.display='none'; form.removeEventListener('submit', submit); load();
       };
       form.addEventListener('submit', submit);

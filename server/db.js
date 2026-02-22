@@ -25,6 +25,10 @@ db.serialize(() => {
     )`
   );
 
+  // prevent creating duplicate cars by name or plate
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name)`);
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate)`);
+
   db.run(
     `CREATE TABLE IF NOT EXISTS bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

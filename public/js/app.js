@@ -28,6 +28,10 @@ function initNav(){
     el.classList.add('active');
     const t = el.dataset.target;
     pages.forEach(p=>p.classList.toggle('active', p.id===t));
+    // if user clicked 'home', reload the page to ensure fresh data
+    if(t === 'home'){
+      try{ location.reload(); }catch(e){}
+    }
   }));
 }
 
@@ -79,11 +83,46 @@ async function start(){
     const reset = ()=>{ lastActivity = Date.now(); };
     ['mousemove','keydown','touchstart','click'].forEach(ev => window.addEventListener(ev, reset, {passive:true}));
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) reset(); });
-    setInterval(()=>{
-      if(Date.now() - lastActivity > 2 * 60 * 1000){
-        console.log('Inactivity >2min, reloading');
-        location.reload();
+    let reloadWarningHandle = null;
+    function showReloadWarning(seconds){
+      // create or reuse notification element
+      let el = document.getElementById('reloadWarning');
+      if(!el){
+        el = document.createElement('div'); el.id = 'reloadWarning';
+        el.style.position = 'fixed'; el.style.left = '50%'; el.style.top = '12px'; el.style.transform = 'translateX(-50%)';
+        el.style.background = 'rgba(0,0,0,0.85)'; el.style.color = '#fff'; el.style.padding = '10px 14px'; el.style.borderRadius = '8px';
+        el.style.zIndex = 9999; el.style.fontSize = '13px'; el.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+        const txt = document.createElement('span'); txt.id = 'reloadWarningText'; el.appendChild(txt);
+        const btn = document.createElement('button'); btn.textContent = 'Annulla'; btn.style.marginLeft = '10px'; btn.className = 'page-btn'; btn.addEventListener('click', ()=>{ cancelReloadWarning(); });
+        el.appendChild(btn);
+        document.body.appendChild(el);
       }
+      const text = document.getElementById('reloadWarningText');
+      let secs = seconds;
+      text.textContent = `Ricarico fra ${secs} secondi per inattività...`;
+      let interval = setInterval(()=>{
+        secs -= 1; if(secs <= 0){ clearInterval(interval); removeReloadWarning(); location.reload(); }
+        else text.textContent = `Ricarico fra ${secs} secondi per inattività...`;
+      }, 1000);
+      reloadWarningHandle = { interval };
+      // cancel on any activity
+      const activityCancel = ()=>{ cancelReloadWarning(); window.removeEventListener('mousemove', activityCancel); window.removeEventListener('keydown', activityCancel); window.removeEventListener('click', activityCancel); window.removeEventListener('touchstart', activityCancel); };
+      window.addEventListener('mousemove', activityCancel, {passive:true}); window.addEventListener('keydown', activityCancel, {passive:true}); window.addEventListener('click', activityCancel, {passive:true}); window.addEventListener('touchstart', activityCancel, {passive:true});
+    }
+    function cancelReloadWarning(){ if(reloadWarningHandle){ clearInterval(reloadWarningHandle.interval); reloadWarningHandle = null; } removeReloadWarning(); }
+    function removeReloadWarning(){ const el = document.getElementById('reloadWarning'); if(el && el.parentNode) el.parentNode.removeChild(el); }
+
+    setInterval(()=>{
+      try{
+        // do not reload if booking modal is open
+        const bookingModal = document.getElementById('bookingModal');
+        const modalOpen = bookingModal && bookingModal.style && bookingModal.style.display && bookingModal.style.display !== 'none';
+        if(modalOpen) return;
+        if(Date.now() - lastActivity > 2 * 60 * 1000){
+          // show 5s warning then reload
+          if(!reloadWarningHandle) showReloadWarning(5);
+        }
+      }catch(e){/* ignore */}
     }, 10 * 1000);
   })();
 }

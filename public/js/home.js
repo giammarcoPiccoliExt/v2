@@ -82,19 +82,36 @@ export async function initHome(){
       r.appendChild(daysWrap);
       container.appendChild(r);
     });
-    // adjust card heights to match calendar cell height
+    // adjust each row so all its cells match the tallest cell in that row
     try{
       setTimeout(()=>{
-        const sampleCell = container.querySelector('.row .cell');
-        const ph = carsCol.querySelector('.header-placeholder');
-        if(sampleCell){
-          const ch = Math.round(sampleCell.getBoundingClientRect().height);
-          const cards = carsCol.querySelectorAll('.car-card');
-          cards.forEach(cd=>{ cd.style.height = ch + 'px'; cd.style.minHeight = ch + 'px'; });
-          // also ensure header placeholder matches header
-          if(ph){ ph.style.height = ch + 'px'; ph.style.minHeight = ch + 'px'; }
-        }
-      }, 30);
+        const headerPlaceholder = carsCol.querySelector('.header-placeholder');
+        const rows = Array.from(container.querySelectorAll('.row'));
+        // first row is header, following rows correspond to carsCol.car-card order
+        const carCards = Array.from(carsCol.querySelectorAll('.car-card'));
+        // ensure we skip header row when aligning per-car rows
+        rows.forEach((row, idx)=>{
+          if(idx === 0) return; // header
+          const cells = Array.from(row.querySelectorAll('.cell'));
+          if(cells.length === 0) return;
+          // reset heights to auto first so we measure natural height
+          cells.forEach(c=>{ c.style.height = ''; c.style.minHeight = ''; });
+          const heights = cells.map(c=> Math.round(c.getBoundingClientRect().height));
+          const maxH = Math.max(...heights, 0);
+          cells.forEach(c=>{ c.style.height = maxH + 'px'; c.style.minHeight = maxH + 'px'; });
+          // set left car card height to match this row (carCards idx aligns with rows idx-1)
+          const card = carCards[idx-1];
+          if(card){ card.style.height = maxH + 'px'; card.style.minHeight = maxH + 'px'; }
+        });
+        // also ensure header placeholder height matches header row
+        try{
+          const headerRow = rows[0];
+          if(headerRow && headerPlaceholder){
+            const hh = Math.round(headerRow.getBoundingClientRect().height);
+            headerPlaceholder.style.height = hh + 'px'; headerPlaceholder.style.minHeight = hh + 'px';
+          }
+        }catch(e){}
+      }, 40);
     }catch(e){}
 
     return days;
@@ -103,40 +120,53 @@ export async function initHome(){
   // adjust heights on window resize so layout stays synced
   window.addEventListener('resize', ()=>{
     try{
-      const sampleCell = document.querySelector('#calendarContainer .row .cell');
-      const ph = carsCol.querySelector('.header-placeholder');
-      if(sampleCell){
-        const ch = Math.round(sampleCell.getBoundingClientRect().height);
-        const cards = carsCol.querySelectorAll('.car-card');
-        cards.forEach(cd=>{ cd.style.height = ch + 'px'; cd.style.minHeight = ch + 'px'; });
-        if(ph){ ph.style.height = ch + 'px'; ph.style.minHeight = ch + 'px'; }
-      }
+      // recompute per-row heights (match tallest cell per row)
+      const rows = Array.from(document.querySelectorAll('#calendarContainer .row'));
+      const carCards = Array.from(carsCol.querySelectorAll('.car-card'));
+      const headerPlaceholder = carsCol.querySelector('.header-placeholder');
+      rows.forEach((row, idx)=>{
+        if(idx === 0) return; // header
+        const cells = Array.from(row.querySelectorAll('.cell'));
+        if(cells.length === 0) return;
+        cells.forEach(c=>{ c.style.height = ''; c.style.minHeight = ''; });
+        const heights = cells.map(c=> Math.round(c.getBoundingClientRect().height));
+        const maxH = Math.max(...heights, 0);
+        cells.forEach(c=>{ c.style.height = maxH + 'px'; c.style.minHeight = maxH + 'px'; });
+        const card = carCards[idx-1]; if(card){ card.style.height = maxH + 'px'; card.style.minHeight = maxH + 'px'; }
+      });
+      // header placeholder
+      try{ const headerRow = rows[0]; if(headerRow && headerPlaceholder){ const hh = Math.round(headerRow.getBoundingClientRect().height); headerPlaceholder.style.height = hh + 'px'; headerPlaceholder.style.minHeight = hh + 'px'; } }catch(e){}
     }catch(e){}
   });
 
   let currentStart = new Date();
   currentStart.setHours(0,0,0,0);
-  const sizes = ['mini','normal','big'];
-  let sizePriority = null; // null means default order
+  const sizes = ['all','mini','normal','big'];
+  // persist selected filter across pages
+  const FILTER_KEY = 'car_size_filter';
+  function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
+  function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
+  let sizeFilter = getSavedFilter();
   const reorderBtn = document.getElementById('reorderSizeBtn');
-  if(reorderBtn) reorderBtn.textContent = 'Ordina';
-  function cyclePriority(){
-    if(sizePriority===null) sizePriority = sizes[0];
-    else{
-      const idx = sizes.indexOf(sizePriority);
-      if(idx<0 || idx===sizes.length-1) sizePriority = null; else sizePriority = sizes[idx+1];
-    }
-    const sizeNames = { mini:'mini', normal:'normale', big:'grande' };
-    reorderBtn.textContent = sizePriority ? `Ordina: ${sizeNames[sizePriority]||sizePriority}` : 'Ordina';
+  const sizeLabels = { all:'Tutti', mini:'mini', normal:'normale', big:'grande' };
+  if(reorderBtn) reorderBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti';
+  function cycleFilter(){
+    const idx = sizes.indexOf(sizeFilter || 'all');
+    const next = (idx < 0 || idx === sizes.length-1) ? 0 : idx + 1;
+    sizeFilter = sizes[next];
+    saveFilter(sizeFilter);
+    if(reorderBtn) reorderBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti';
     refresh();
   }
-  reorderBtn?.addEventListener('click', cyclePriority);
+  reorderBtn?.addEventListener('click', cycleFilter);
+  // listen to filter changes from other pages
+  window.addEventListener('car:filterChanged', (ev)=>{ try{ sizeFilter = ev.detail || 'all'; saveFilter(sizeFilter); if(reorderBtn) reorderBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti'; refresh(); }catch(e){} });
 
   async function refresh(){
     const [carsOrig, bookings] = await Promise.all([fetchCars(), fetchBookings()]);
     let cars = carsOrig.slice();
-    if(sizePriority){
-      cars.sort((a,b)=>{ if(a.size===sizePriority && b.size!==sizePriority) return -1; if(b.size===sizePriority && a.size!==sizePriority) return 1; return 0; });
+    if(sizeFilter && sizeFilter !== 'all'){
+      cars = cars.filter(c=> (c.size||'') === sizeFilter);
     }
       const days = renderCalendar(cars, bookings, currentStart);
     // center calendar on today column
@@ -207,6 +237,14 @@ export async function initHome(){
     const onSubmit = async (e)=>{
       e.preventDefault();
       const data = new FormData(form); const body = Object.fromEntries(data.entries());
+      // require fields: car_id, start_date, end_date, client_name
+      if(!body.car_id || !body.start_date || !body.end_date || !(body.client_name && body.client_name.trim())){
+        alert('Compila tutti i campi obbligatori: auto, data inizio, data fine e nome cliente.');
+        return;
+      }
+      const sDate = new Date(body.start_date);
+      const eDate = new Date(body.end_date);
+      if(isNaN(sDate) || isNaN(eDate) || sDate > eDate){ alert('Date non valide: assicurati che la data di inizio sia <= data di fine.'); return; }
       const start_iso = body.start_date + 'T00:00:00Z'; const end_iso = body.end_date + 'T23:59:59Z';
       const car_id = parseInt(body.car_id);
       // check one more time server-side
