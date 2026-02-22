@@ -147,15 +147,19 @@ if (usePlainHttp) {
   server = https.createServer(options, app);
 }
 
-// also start a plain HTTP server that redirects to HTTPS (helps mobile/HTTP accesses)
+// optionally start an HTTP redirector to HTTPS when running in HTTPS mode
 const http = require('http');
 const HTTP_PORT = config.httpPort || 3000;
-http.createServer((req, res) => {
-  const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
-  const redirectPort = PORT;
-  res.writeHead(301, { Location: `https://${host}:${redirectPort}${req.url}` });
-  res.end();
-}).listen(HTTP_PORT, () => { console.log(`HTTP redirector listening on port ${HTTP_PORT} -> https:${PORT}`); }).on('error', (e)=>{ console.log('HTTP redirector error', e.message); });
+if (!usePlainHttp) {
+  http.createServer((req, res) => {
+    const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
+    const redirectPort = PORT;
+    res.writeHead(301, { Location: `https://${host}:${redirectPort}${req.url}` });
+    res.end();
+  }).listen(HTTP_PORT, () => { console.log(`HTTP redirector listening on port ${HTTP_PORT} -> https:${PORT}`); }).on('error', (e)=>{ console.log('HTTP redirector error', e.message); });
+} else {
+  console.log('usePlainHttp is true; HTTP->HTTPS redirector disabled');
+}
 
 // WebSocket server for push notifications
 const wss = new WebSocket.Server({ server });
@@ -447,18 +451,4 @@ function setupBackups(intervalHours = 6) {
 setupBackups(6);
 
 // ensure a default passcode exists on first run (password: 'admin')
-function ensureDefaultPasscode(){
-  db.get('SELECT COUNT(*) as cnt FROM passcodes', [], (err, row) => {
-    if (err) return console.error('passcode check error', err.message);
-    if (!row || row.cnt === 0) {
-      try{
-        const passhash = hashPassword('admin');
-        db.run('INSERT INTO passcodes (name, passhash, created_at) VALUES (?,?,?)', ['admin', passhash, new Date().toISOString()], function(err){
-          if(err) return console.error('failed create default passcode', err.message);
-          console.log('Created default passcode: admin');
-        });
-      }catch(e){ console.error('failed create default passcode', e.message); }
-    }
-  });
-}
-ensureDefaultPasscode();
+// (defined earlier and invoked; duplicate definition removed)
