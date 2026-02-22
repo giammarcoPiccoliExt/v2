@@ -85,23 +85,13 @@ header{padding:0;margin:0}
   .cars-col{width:28vw;min-width:80px}
 }
 
-/* Bookings page: two-column layout on small screens with sticky left sidebar (20% width) */
+/* Bookings page: media overrides removed to reset layout for bookings column; keep general rules in place */
 @media(max-width:600px){
-  /* Mobile: stack machines above/below calendar and make calendar scroll vertically only */
-    #bookings .bookings-body{display:flex;gap:12px;align-items:flex-start}
-    #bookings .bookings-body .sidebar{flex:0 0 15%;max-width:15%;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;padding-right:8px;background:transparent;z-index:10}
-    #bookings .bookings-body .sidebar .home-header{position:sticky;top:0;z-index:11;background:transparent}
-    /* calendar sits to the right of the 15% column and can scroll horizontally like home */
-    #bookings .bookings-body .calendar-wrapper{flex:1;overflow:auto}
-    #bookings .cars-col{display:flex;flex-direction:column;gap:8px}
-    #bookings .calendar-col{min-width:900px}
+  /* No bookings-specific overrides here; layout will follow base and home rules */
 }
 
 /* helper classes for header and month view */
 .bookings-body{display:flex;gap:12px}
-#bookings .bookings-body .sidebar{max-height:calc(100vh - var(--header-height) - 24px);overflow:auto}
-#bookings .bookings-body .calendar-wrapper{max-width:calc(100% - 15% - 36px);box-sizing:border-box;overflow:auto}
-#bookings .month-wrap, #bookings .month-grid{max-width:100%;box-sizing:border-box}
 
 .bookings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #monthView{width:100%}

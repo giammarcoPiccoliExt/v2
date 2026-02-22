@@ -141,7 +141,8 @@ export async function initSettings(){
     }catch(e){ console.error('load devices', e); }
   }
   passcodesBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.remove('hidden'); loadPasscodes(); });
-  passcodesCloseBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.add('hidden'); });
+  const passcodesCloseBtn = document.getElementById('passcodesCloseBtn');
+  if(passcodesCloseBtn) passcodesCloseBtn.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.add('hidden'); });
   // modal close top-left
   document.getElementById('usersModalClose')?.addEventListener('click', ()=>{ usersModal.classList.add('hidden'); });
   document.getElementById('carModalClose')?.addEventListener('click', ()=>{ document.getElementById('carModal').classList.add('hidden'); });
