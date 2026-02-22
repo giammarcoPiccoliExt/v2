@@ -66,7 +66,7 @@ header{padding:0;margin:0}
 .calendar-wrapper{overflow:auto;flex:1;margin-left:0}
 .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
 .month-grid{display:grid;grid-template-columns:repeat(7,var(--cell-width));gap:6px}
-.month-grid .day-cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block;height:calc(var(--row-height) * 2);min-height:calc(var(--row-height) * 2);max-height:calc(var(--row-height) * 2);overflow:hidden}
+.month-grid .day-cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block;overflow:hidden;aspect-ratio:1/2}
 .month-grid .day-cell.today{background:#e6e6e6}
 .month-grid .day-cell .day-label{position:absolute;left:6px;top:4px;font-size:12px;color:#333}
 .month-grid .day-cell .more-indicator{position:absolute;right:6px;bottom:6px;width:18px;height:18px;border-radius:3px;background:#999;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
