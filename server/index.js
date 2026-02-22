@@ -31,9 +31,27 @@ const certPath = config.ssl?.certPath || path.join(certDir, 'cert.pem');
 if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
   console.log('Generating self-signed certs...');
   const attrs = [{ name: 'commonName', value: 'localhost' }];
-  const pems = selfsigned.generate(attrs, { days: 3650 });
-  fs.writeFileSync(keyPath, pems.private);
-  fs.writeFileSync(certPath, pems.cert);
+  try {
+    const pems = selfsigned.generate(attrs, { days: 3650 });
+    if (pems && pems.private && pems.cert) {
+      fs.writeFileSync(keyPath, pems.private);
+      fs.writeFileSync(certPath, pems.cert);
+    } else {
+      throw new Error('selfsigned returned invalid data');
+    }
+  } catch (e) {
+    console.error('selfsigned generation failed, falling back to openssl:', e.message);
+    try {
+      const { spawnSync } = require('child_process');
+      // generate a temporary self-signed cert via openssl
+      const subj = '/CN=localhost';
+      const res = spawnSync('openssl', ['req', '-x509', '-nodes', '-days', '3650', '-newkey', 'rsa:2048', '-keyout', keyPath, '-out', certPath, '-subj', subj], { stdio: 'inherit' });
+      if (res.error) throw res.error;
+    } catch (e2) {
+      console.error('OpenSSL fallback failed:', e2.message);
+      throw e2;
+    }
+  }
 }
 
 const app = express();
