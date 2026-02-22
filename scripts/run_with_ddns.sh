@@ -31,6 +31,17 @@ start_ddns(){
 start_server(){
   echo "Starting Node server (USE_HTTP=1)" | tee -a "$LOG_DIR/run.log"
   cd "$DIR"
+  # if a server.pid exists and process is alive, don't start another
+  if [ -f "$LOG_DIR/server.pid" ]; then
+    pid=$(cat "$LOG_DIR/server.pid")
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "Server already running (pid $pid)" | tee -a "$LOG_DIR/run.log"
+      return 0
+    else
+      echo "Removing stale server.pid (pid $pid not found)" | tee -a "$LOG_DIR/run.log"
+      rm -f "$LOG_DIR/server.pid" || true
+    fi
+  fi
   # run in background and log
   nohup env USE_HTTP=1 node server/index.js >>"$LOG_DIR/server.log" 2>&1 &
   echo $! > "$LOG_DIR/server.pid"
@@ -44,6 +55,9 @@ stop_server(){
       echo "Stopping server pid $pid" | tee -a "$LOG_DIR/run.log"
       kill "$pid"
       rm -f "$LOG_DIR/server.pid"
+    else
+      echo "Server pid $pid not running; removing stale pid file" | tee -a "$LOG_DIR/run.log"
+      rm -f "$LOG_DIR/server.pid" || true
     fi
   fi
 }
