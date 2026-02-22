@@ -1,5 +1,5 @@
 <div id="bookings" class="page">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+  <div class="bookings-header">
     <div>
       <button id="filterSizeBtn" class="page-btn">Filtra</button>
     </div>
@@ -13,32 +13,7 @@
         <div id="machinesLegend" class="cars-col"></div>
       </div>
       <div class="calendar-wrapper">
-        <div id="monthView" style="width:100%"></div>
+        <div id="monthView"></div>
       </div>
     </div>
-  <style>
-    /* left sidebar fixed and vertically centered; calendar fills remaining width */
-    .bookings-body{display:flex;gap:12px}
-    .sidebar{width:20vw;min-width:140px;flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:12px;position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:10}
-    .cars-col{width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:flex-start}
-    .calendar-wrapper{overflow:auto;flex:1;margin-left:calc(20vw + 36px)}
-    .cars-col .car-card{background:#fff;display:inline-flex;flex:0 0 auto}
-    /* month block fills available width and prevents horizontal overflow */
-    .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
-    .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-    .month-grid .day-cell{width:100%;box-sizing:border-box;border:1px solid #eee;padding:4px;position:relative;display:block}
-    .month-grid .day-cell.today{background:#e6e6e6}
-    .month-grid .day-cell .day-label{position:absolute;left:6px;top:4px;font-size:12px;color:#333}
-    .month-grid .day-cell .more-indicator{position:absolute;right:6px;bottom:6px;width:18px;height:18px;border-radius:3px;background:#999;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
-    .month-grid .day-cell .dots{position:absolute;right:6px;bottom:6px;display:flex;gap:4px}
-    .month-grid .day-cell .dots span{width:10px;height:10px;border-radius:2px;display:inline-block}
-    /* make day cells 1:2 (width:height = 1:2) */
-    .month-grid .day-cell{aspect-ratio:1 / 2}
-    .month-title{font-weight:600;margin-bottom:6px}
-    /* responsive: on small screens make sidebar static above calendar */
-    @media(max-width:800px){
-      .sidebar{position:static;transform:none;left:auto;top:auto;width:100%;min-width:0;display:flex;flex-direction:row;justify-content:flex-start;padding-bottom:8px}
-      .calendar-wrapper{margin-left:0}
-    }
-  </style>
 </div>

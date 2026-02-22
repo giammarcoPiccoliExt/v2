@@ -1,4 +1,4 @@
-<div id="bookingModal" class="modal" style="display:none">
+<div id="bookingModal" class="modal hidden">
   <div class="modal-content">
     <button class="modal-close" id="bookingModalClose">✕</button>
     <h4 id="bookingModalTitle">Nuova Prenotazione</h4>
@@ -8,7 +8,7 @@
       <div class="field"><label>Fine</label><input type="date" name="end_date" required /></div>
       <div class="field"><label>Auto</label><select name="car_id" required></select></div>
       <div class="field checkbox-row"><label><input type="checkbox" name="force_booking" value="1" /> Forza prenotazione (sovrascrivi esistenti)</label></div>
-      <div id="overlapWarning" style="color:#900;display:none;margin-top:8px"></div>
+      <div id="overlapWarning" class="overlap-warning hidden"></div>
       <div class="field"><label>Nome cliente (opzionale)</label><input name="client_name" /></div>
       <div class="field"><label>Descrizione (opzionale)</label><input name="description" /></div>
       <div class="actions">

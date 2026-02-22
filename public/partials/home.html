@@ -1,5 +1,5 @@
 <div id="home" class="page active">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div class="home-header">
     <div>
       <button id="reorderSizeBtn" class="page-btn">Ordina</button>
     </div>
@@ -9,21 +9,11 @@
   </div>
   <div class="home-body">
     <div class="cars-col" id="carsCol">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <strong style="font-size:14px">Auto</strong>
-      </div>
+      <div class="home-header"><strong class="section-title">Auto</strong></div>
     </div>
     <div class="calendar-wrapper">
       <div id="calendarContainer" class="calendar-col"></div>
     </div>
   </div>
-  <style>
-    .home-body{display:flex;gap:0;align-items:flex-start}
-    .cars-col{width:20vw;min-width:120px;flex:0 0 20vw;padding-right:8px;display:flex;flex-direction:column}
-    .calendar-wrapper{overflow-x:auto;flex:1}
-    .calendar-col{min-width:900px}
-    /* make car cards same height as calendar cells and keep header placeholder sticky */
-    .cars-col .car-card{position:relative;background:#fff;box-sizing:border-box;min-height:64px;display:flex;align-items:center;padding:6px;border-radius:6px;border:1px solid #ddd;margin-bottom:0}
-    .cars-col .header-placeholder{position:sticky;top:0;background:transparent;border:0;margin-bottom:0;min-height:0}
-  </style>
+  
 </div>

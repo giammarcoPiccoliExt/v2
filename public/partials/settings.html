@@ -1,6 +1,6 @@
 <div id="settings" class="page">
   <h3>Impostazioni</h3>
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <div class="settings-toolbar">
       <button id="newCarBtn" class="page-btn"><span class="icon">＋</span><span>Nuova Auto</span></button>
       <button id="passcodesBtn" class="page-btn"><span class="icon">🔑</span><span>Passcode</span></button>
     </div>
@@ -10,17 +10,17 @@
   <div id="modalsContainer"></div>
   
   <!-- Passcodes modal -->
-  <div id="passcodesModal" class="modal" style="display:none">
+  <div id="passcodesModal" class="modal hidden">
     <div class="modal-content">
       <button class="modal-close" id="passcodesModalClose">✕</button>
       <h4>Passcode</h4>
-      <div id="passcodesList" style="max-height:300px;overflow:auto;margin-bottom:8px"></div>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-        <input id="newPassName" placeholder="Nome" style="flex:1;padding:6px" />
-        <input id="newPassValue" placeholder="Codice" style="flex:1;padding:6px" />
+      <div id="passcodesList" class="passcodes-list"></div>
+      <div class="passcodes-row">
+        <input id="newPassName" placeholder="Nome" class="pass-input" />
+        <input id="newPassValue" placeholder="Codice" class="pass-input" />
         <button id="addPassBtn" class="page-btn">Aggiungi</button>
       </div>
-      <div style="margin-top:12px"><button id="passcodesCloseBtn" class="page-btn">Chiudi</button></div>
+      <div class="passcodes-row-bottom"><button id="passcodesCloseBtn" class="page-btn">Chiudi</button></div>
     </div>
   </div>
 </div>
