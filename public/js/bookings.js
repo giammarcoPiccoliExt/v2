@@ -10,13 +10,18 @@ export function initBookings(){
   function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
   function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
   let sizeFilter = getSavedFilter();
-  // filter button: create if missing
+  // filter button: prefer the sidebar placement if available
   let filterBtn = document.getElementById('filterSizeBtn');
   if(!filterBtn){
     filterBtn = document.createElement('button'); filterBtn.id = 'filterSizeBtn'; filterBtn.className='page-btn';
-    if(legend && legend.parentNode) legend.parentNode.insertBefore(filterBtn, legend);
+    const sidebar = document.querySelector('.sidebar');
+    if(sidebar) sidebar.insertBefore(filterBtn, sidebar.firstChild);
+    else if(legend && legend.parentNode) legend.parentNode.insertBefore(filterBtn, legend);
     else if(monthView && monthView.parentNode) monthView.parentNode.insertBefore(filterBtn, monthView);
     else document.body.insertBefore(filterBtn, document.body.firstChild);
+  } else {
+    // ensure filter lives inside sidebar when present
+    const sidebar = document.querySelector('.sidebar'); if(sidebar && filterBtn.parentNode !== sidebar) sidebar.insertBefore(filterBtn, sidebar.firstChild);
   }
   function updateFilterBtn(){ filterBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti'; }
   updateFilterBtn();
@@ -100,6 +105,28 @@ export function initBookings(){
       monthWrap.appendChild(grid);
       monthView.appendChild(monthWrap);
     });
+    // after rendering months, scroll calendar-wrapper to current month
+    try{
+      const today = new Date();
+      const curKey = `${today.getMonth()}-${today.getFullYear()}`;
+      const monthWraps = Array.from(monthView.querySelectorAll('.month-wrap'));
+      let target = null;
+      monthWraps.forEach(mw=>{
+        const title = mw.querySelector('.month-title');
+        if(!title) return;
+        const parts = title.textContent.trim().split(' ');
+        const monthName = parts[0];
+        const year = parts[parts.length-1];
+        const dt = new Date(`${monthName} 1, ${year}`);
+        if(dt.getMonth() === today.getMonth() && dt.getFullYear() === today.getFullYear()) target = mw;
+      });
+      const wrapper = document.querySelector('.calendar-wrapper');
+      if(target && wrapper){
+        const top = target.offsetTop;
+        const scrollTo = Math.max(0, Math.round(top - (wrapper.clientHeight/2) + (target.clientHeight/2)));
+        wrapper.scrollTop = scrollTo;
+      }
+    }catch(e){}
   }
 
   newBookingBtn?.addEventListener('click', ()=>{

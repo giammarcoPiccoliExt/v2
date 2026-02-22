@@ -7,17 +7,21 @@
   </div>
 
     <div class="bookings-body">
-    <div id="machinesLegend" class="cars-col"></div>
-    <div class="calendar-wrapper">
-      <div id="monthView" style="width:100%"></div>
+      <div class="sidebar">
+        <button id="filterSizeBtn" class="page-btn">Filtra</button>
+        <div id="machinesLegend" class="cars-col"></div>
+      </div>
+      <div class="calendar-wrapper">
+        <div id="monthView" style="width:100%"></div>
+      </div>
     </div>
-  </div>
   <style>
-    /* stacked months: legend on left, calendar fills remaining width */
-    .bookings-body{display:flex;gap:12px;align-items:flex-start}
-    .cars-col{width:20vw;min-width:140px;flex:0 0 20vw}
-    .calendar-wrapper{overflow:auto;flex:1}
-    .cars-col .car-card{position:sticky;top:0;background:#fff}
+    /* left sidebar fixed and vertically centered; calendar fills remaining width */
+    .bookings-body{display:flex;gap:12px}
+    .sidebar{width:20vw;min-width:140px;flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:12px;position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:10}
+    .cars-col{width:100%}
+    .calendar-wrapper{overflow:auto;flex:1;margin-left:calc(20vw + 36px)}
+    .cars-col .car-card{background:#fff}
     /* month block fills available width and prevents horizontal overflow */
     .month-wrap{display:block;width:100%;box-sizing:border-box;margin-bottom:18px}
     .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
@@ -30,5 +34,10 @@
     /* make day cells 1:2 (width:height = 1:2) */
     .month-grid .day-cell{aspect-ratio:1 / 2}
     .month-title{font-weight:600;margin-bottom:6px}
+    /* responsive: on small screens make sidebar static above calendar */
+    @media(max-width:800px){
+      .sidebar{position:static;transform:none;left:auto;top:auto;width:100%;min-width:0;display:flex;flex-direction:row;justify-content:flex-start;padding-bottom:8px}
+      .calendar-wrapper{margin-left:0}
+    }
   </style>
 </div>
