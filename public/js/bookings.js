@@ -5,8 +5,8 @@ export function initBookings(){
   const legend = document.getElementById('machinesLegend');
   const monthView = document.getElementById('monthView');
   const FILTER_KEY = 'car_size_filter';
-  const sizes = ['all','mini','normal','big'];
-  const sizeLabels = { all:'Tutti', mini:'mini', normal:'normale', big:'grande' };
+  const sizes = ['all','piccola','media','grande','soccorso'];
+  const sizeLabels = { all:'Tutti', piccola:'Piccola', media:'Media', grande:'Grande', soccorso:'Soccorso' };
   function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
   function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
   let sizeFilter = getSavedFilter();
@@ -160,9 +160,10 @@ export function initBookings(){
         const row = document.createElement('div'); row.className = 'card-row';
         const meta = document.createElement('div'); meta.className = 'card-meta';
         const titleDiv = document.createElement('div'); titleDiv.className = 'title'; titleDiv.textContent = clientLabel ? ('- '+clientLabel) : (car ? car.name : '?');
+        const modelDiv = document.createElement('div'); modelDiv.className = 'car-model'; modelDiv.textContent = car ? ((car.model?car.model + ' ':'') + (car.plate || car.targa || '')) : '';
         const datesDiv = document.createElement('div'); datesDiv.className = 'dates'; datesDiv.textContent = `${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}`;
         const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName;
-        meta.appendChild(titleDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
+        meta.appendChild(titleDiv); meta.appendChild(modelDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
         const actions = document.createElement('div'); actions.className = 'device-actions';
         const editBtn = document.createElement('button'); editBtn.className = 'page-btn editBooking'; editBtn.textContent = 'Modifica';
         const delBtn = document.createElement('button'); delBtn.className = 'page-btn delBooking danger'; delBtn.textContent = 'Elimina';
@@ -171,7 +172,7 @@ export function initBookings(){
         card.appendChild(row);
         const desc = document.createElement('div'); desc.className = 'card-desc'; desc.innerHTML = bk.description || '';
         card.appendChild(desc);
-      editBtn.addEventListener('click', ()=>{ openEditBooking(bk, cars); });
+      editBtn.addEventListener('click', ()=>{ modal.classList.add('hidden'); openEditBooking(bk, cars); });
       delBtn.addEventListener('click', async ()=>{
         if(!confirm('Eliminare la prenotazione?')) return;
         const res = await fetchRaw(`/api/bookings/${bk.id}`, { method:'DELETE' });
@@ -207,6 +208,9 @@ export function initBookings(){
     form.addEventListener('submit', onSubmit);
     const bookingCancelBtn = document.getElementById('bookingCancelBtn');
     if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
+    // ensure day selection modal is hidden and bring edit modal to foreground
+    document.getElementById('dayBookingsModal')?.classList.add('hidden');
+    modal.style.zIndex = 2000;
     modal.classList.remove('hidden');
   }
 

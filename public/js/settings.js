@@ -40,17 +40,16 @@ export async function initSettings(){
       const color = modal.querySelector('input[name="color"]');
       const plate = modal.querySelector('input[name="plate"]');
       const size = modal.querySelector('select[name="size"]');
-      const price = modal.querySelector('input[name="price_per_day"]');
       const res = await fetchJson(`/api/cars`);
       const car = res.find(x=>x.id==id);
       if(!car) return;
-      name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||''; price.value = car.price_per_day||'';
+      name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
       const form = modal.querySelector('form'); form.setAttribute('data-edit-id', id);
       renderSwatches(color.value || '#ffffff');
       modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
-        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, price_per_day: price.value };
+        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value };
         // require name, plate and size only (price optional, color may duplicate)
         const nameNorm = (body.name||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
@@ -83,8 +82,7 @@ export async function initSettings(){
       form.querySelector('input[name="name"]').value = '';
       form.querySelector('input[name="color"]').value = '';
       form.querySelector('input[name="plate"]').value = '';
-      form.querySelector('select[name="size"]').value = 'normal';
-      form.querySelector('input[name="price_per_day"]').value = '';
+      form.querySelector('select[name="size"]').value = 'media';
       renderSwatches('#ffffff');
       modal.classList.remove('hidden');
       const submit = async (e)=>{

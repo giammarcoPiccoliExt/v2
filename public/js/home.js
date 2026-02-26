@@ -135,14 +135,14 @@ export async function initHome(){
 
   let currentStart = new Date();
   currentStart.setHours(0,0,0,0);
-  const sizes = ['all','mini','normal','big'];
+  const sizes = ['all','piccola','media','grande','soccorso'];
   // persist selected filter across pages
   const FILTER_KEY = 'car_size_filter';
   function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
   function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
   let sizeFilter = getSavedFilter();
   const reorderBtn = document.getElementById('reorderSizeBtn');
-  const sizeLabels = { all:'Tutti', mini:'mini', normal:'normale', big:'grande' };
+  const sizeLabels = { all:'Tutti', piccola:'Piccola', media:'Media', grande:'Grande', soccorso:'Soccorso' };
   if(reorderBtn) reorderBtn.textContent = sizeFilter && sizeFilter !== 'all' ? `Filtra: ${sizeLabels[sizeFilter]||sizeFilter}` : 'Filtra: Tutti';
   function cycleFilter(){
     const idx = sizes.indexOf(sizeFilter || 'all');
@@ -165,7 +165,9 @@ export async function initHome(){
       const days = renderCalendar(cars, bookings, currentStart);
     // center calendar on today column
     try{
-      const todayIso = new Date().toISOString().slice(0,10);
+      // center on tomorrow so today appears slightly to the left of center
+      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+      const todayIso = tomorrow.toISOString().slice(0,10);
       const todayIndex = days.findIndex(d=> d.toISOString().slice(0,10) === todayIso);
       if(typeof todayIndex === 'number' && todayIndex >= 0 && calendarWrapper){
         // compute cell width from header row
@@ -213,8 +215,17 @@ export async function initHome(){
       const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
       fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id: parseInt(carId), start_iso, end_iso }) })
         .then(json=>{
-           if(json.overlap){ warning.classList.remove('hidden'); warning.textContent = 'Conflitto: già prenotato: ' + json.rows.map(r=> (r.title||'') + ' ('+r.start_iso.slice(0,10)+'→'+r.end_iso.slice(0,10)+')').join('; '); }
-           else warning.classList.add('hidden');
+           if(json.overlap){
+             const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+             if(overlapping.length){
+               warning.classList.remove('hidden');
+               warning.textContent = 'Conflitto: già prenotato: ' + overlapping.map(r=> (r.title||'') + ' ('+r.start_iso.slice(0,10)+'→'+r.end_iso.slice(0,10)+')').join('; ');
+             } else {
+               // fallback if server reported overlap but no rows match locally
+               warning.classList.remove('hidden');
+               warning.textContent = 'Conflitto: già prenotato.';
+             }
+           } else warning.classList.add('hidden');
         }).catch(()=>{});
     }
 
@@ -244,7 +255,11 @@ export async function initHome(){
       // check one more time server-side
       const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id, start_iso, end_iso }) });
       const force = !!body.force_booking;
-      if(chk.overlap && !force){ alert('Impossibile salvare la prenotazione: conflitto:\n' + chk.rows.map(r=> (r.title||'')+' '+r.start_iso+'→'+r.end_iso).join('\n')); return; }
+      if(chk.overlap && !force){
+        const overlapping = (chk.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+        alert('Impossibile salvare la prenotazione: conflitto:\n' + overlapping.map(r=> (r.title||'')+' '+r.start_iso+'→'+r.end_iso).join('\n'));
+        return;
+      }
       const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null, force: force };
       const res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
       if(res.status===409) { alert('Conflitto'); return; }

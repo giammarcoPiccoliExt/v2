@@ -1,6 +1,6 @@
 import { fetchText } from './utils.js';
 
-const partials = ['home','bookings','settings','carModal','bookingModal','dayBookingsModal'];
+const partials = ['home','bookings','notifications','summary','settings','carModal','bookingModal','dayBookingsModal'];
 
 async function loadPartials(){
   let app = document.getElementById('app');
