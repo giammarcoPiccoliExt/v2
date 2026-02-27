@@ -136,6 +136,9 @@ header{padding:0;margin:0}
 .overlap-warning{color:#900;margin-top:8px}
 .passcodes-list{max-height:300px;overflow:auto;margin-bottom:8px}
 .passcodes-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+
+/* release info in passcodes modal */
+.release-info{font-size:13px;color:#666;margin-bottom:8px}
 .pass-input{flex:1;padding:6px}
 .passcodes-row-bottom{margin-top:12px}
 
