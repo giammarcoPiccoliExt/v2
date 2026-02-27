@@ -40,6 +40,8 @@ import { initDevice, subscribePush } from './device.js';
 import { initHome } from './home.js';
 import { initBookings } from './bookings.js';
 import { initSettings } from './settings.js';
+import { initNotifications } from './notifications.js';
+import { initSummary } from './summary.js';
 
 async function start(){
   // require login: if no passcode token present, redirect to login page
@@ -54,6 +56,8 @@ async function start(){
   initHome();
   initBookings();
   initSettings();
+  initNotifications();
+  initSummary();
 
   // WebSocket realtime updates
   (function setupWS(){
@@ -67,6 +71,11 @@ async function start(){
             const msg = JSON.parse(ev.data);
             if(msg.type === 'booking_created'){
               window.dispatchEvent(new CustomEvent('booking:created', { detail: msg.booking }));
+            } else if(msg.type === 'booking_deleted'){
+              window.dispatchEvent(new CustomEvent('booking:deleted', { detail: msg.booking }));
+            } else if(msg.type === 'notification'){
+              // generic notification broadcast
+              window.dispatchEvent(new CustomEvent('notification:received', { detail: msg }));
             }
           }catch(e){}
         });

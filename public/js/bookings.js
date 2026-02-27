@@ -159,11 +159,15 @@ export function initBookings(){
         // build card markup without inline styles
         const row = document.createElement('div'); row.className = 'card-row';
         const meta = document.createElement('div'); meta.className = 'card-meta';
-        const titleDiv = document.createElement('div'); titleDiv.className = 'title'; titleDiv.textContent = clientLabel ? ('- '+clientLabel) : (car ? car.name : '?');
-        const modelDiv = document.createElement('div'); modelDiv.className = 'car-model'; modelDiv.textContent = car ? ((car.model?car.model + ' ':'') + (car.plate || car.targa || '')) : '';
+        // title: "nome auto - cliente"
+        const titleDiv = document.createElement('div'); titleDiv.className = 'title';
+        if(car){ titleDiv.textContent = car.name + (clientLabel ? (' - ' + clientLabel) : ''); }
+        else { titleDiv.textContent = clientLabel || '?'; }
+        // plate/targa on its own line
+        const plateDiv = document.createElement('div'); plateDiv.className = 'car-plate'; plateDiv.textContent = car ? (car.plate || car.targa || '') : '';
         const datesDiv = document.createElement('div'); datesDiv.className = 'dates'; datesDiv.textContent = `${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}`;
-        const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName;
-        meta.appendChild(titleDiv); meta.appendChild(modelDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
+        const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName ? ('Creato da: ' + creatorName) : '';
+        meta.appendChild(titleDiv); meta.appendChild(plateDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
         const actions = document.createElement('div'); actions.className = 'device-actions';
         const editBtn = document.createElement('button'); editBtn.className = 'page-btn editBooking'; editBtn.textContent = 'Modifica';
         const delBtn = document.createElement('button'); delBtn.className = 'page-btn delBooking danger'; delBtn.textContent = 'Elimina';

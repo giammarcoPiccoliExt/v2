@@ -390,10 +390,20 @@ app.delete('/api/bookings/:id', (req, res) => {
   const id = req.params.id;
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
   if (!auth || !sessions.has(auth)) return res.status(403).json({ error: 'forbidden: passcode required' });
-  db.run('DELETE FROM bookings WHERE id=?', [id], function (err) {
+  const session = sessions.get(auth);
+  // get booking before deleting so we can broadcast full info
+  db.get('SELECT * FROM bookings WHERE id=?', [id], (err, bookingRow) => {
     if (err) return res.status(500).json({ error: err.message });
-    broadcast({ type: 'booking_deleted', id });
-    res.json({ deleted: this.changes });
+    if (!bookingRow) return res.status(404).json({ error: 'not found' });
+    db.run('DELETE FROM bookings WHERE id=?', [id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      // include who deleted and the deleted booking details
+      const payload = { id: bookingRow.id, car_id: bookingRow.car_id, start_iso: bookingRow.start_iso, end_iso: bookingRow.end_iso, title: bookingRow.title, client_name: bookingRow.client_name, creator_name: bookingRow.creator_name, description: bookingRow.description, deleted_by: session ? session.name : null };
+      broadcast({ type: 'booking_deleted', booking: payload });
+      // also send a generic notification object for clients to display if relevant
+      broadcast({ type: 'notification', level: 'info', message: `Prenotazione eliminata: ${payload.title || ''}`, booking: payload });
+      res.json({ deleted: this.changes });
+    });
   });
 });
 

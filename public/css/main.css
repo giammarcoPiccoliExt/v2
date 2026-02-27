@@ -1,12 +1,12 @@
 /* Consolidated main stylesheet extracted from inline styles */
-:root{--row-height:80px; --cell-width:120px}
+:root{--row-height:64px; --cell-width:120px}
 body{font-family:Arial;margin:0;padding:0;background:#fff}
 .page{display:none;padding:12px}
 .page.active{display:block}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:56px;background:#fff;border-top:1px solid #ddd;display:flex}
 .nav-item{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#777;padding:6px 0}
 .nav-item .nav-icon{font-size:18px;margin-bottom:2px}
-:root{--row-height:96px; --cell-width:120px; --header-height:56px}
+:root{--header-height:56px}
 .nav-item .nav-label{font-size:12px}
 .nav-item.active{background:#f0f0f0;color:#222}
 .nav-item.center{position:relative}
@@ -117,7 +117,10 @@ header{padding:0;margin:0}
 .cars-col{width:20vw;min-width:120px;flex:0 0 20vw;padding-right:8px;display:flex;flex-direction:column}
 .calendar-wrapper{overflow-x:auto;flex:1}
 .calendar-col{min-width:900px}
-.cars-col .car-card{position:relative;background:#fff;box-sizing:border-box;min-height:56px;display:flex;align-items:center;padding:6px;border-radius:6px;border:1px solid #ddd;margin-bottom:0}
+.cars-col .car-card{position:relative;background:#fff;box-sizing:border-box;min-height:48px;display:flex;align-items:center;padding:6px;border-radius:6px;border:1px solid #ddd;margin-bottom:0}
+
+/* ensure header row border is not heavier than column borders */
+.row:first-child .cell{border-bottom:1px solid #ddd}
 
 /* stronger header/date-row separation */
 .row:first-child .cell{border-bottom:2px solid #ccc}
