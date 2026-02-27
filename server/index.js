@@ -395,15 +395,22 @@ app.delete('/api/bookings/:id', (req, res) => {
   db.get('SELECT * FROM bookings WHERE id=?', [id], (err, bookingRow) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!bookingRow) return res.status(404).json({ error: 'not found' });
-    db.run('DELETE FROM bookings WHERE id=?', [id], function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      // include who deleted and the deleted booking details
-      const payload = { id: bookingRow.id, car_id: bookingRow.car_id, start_iso: bookingRow.start_iso, end_iso: bookingRow.end_iso, title: bookingRow.title, client_name: bookingRow.client_name, creator_name: bookingRow.creator_name, description: bookingRow.description, deleted_by: session ? session.name : null };
-      broadcast({ type: 'booking_deleted', booking: payload });
-      // also send a generic notification object for clients to display if relevant
-      broadcast({ type: 'notification', level: 'info', message: `Prenotazione eliminata: ${payload.title || ''}`, booking: payload });
-      res.json({ deleted: this.changes });
-    });
+    // insert into archive first
+    const deletedAt = new Date().toISOString();
+    db.run(
+      'INSERT INTO bookings_archive (original_id, car_id, start_iso, end_iso, title, client_name, creator_name, description, deleted_by, deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [bookingRow.id, bookingRow.car_id, bookingRow.start_iso, bookingRow.end_iso, bookingRow.title || null, bookingRow.client_name || null, bookingRow.creator_name || null, bookingRow.description || null, session ? session.name : null, deletedAt],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        // now delete original
+        db.run('DELETE FROM bookings WHERE id=?', [id], function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          const payload = { id: bookingRow.id, car_id: bookingRow.car_id, start_iso: bookingRow.start_iso, end_iso: bookingRow.end_iso, title: bookingRow.title, client_name: bookingRow.client_name, creator_name: bookingRow.creator_name, description: bookingRow.description, deleted_by: session ? session.name : null, deleted_at: deletedAt };
+          broadcast({ type: 'booking_deleted', booking: payload });
+          res.json({ deleted: this.changes });
+        });
+      }
+    );
   });
 });
 
@@ -419,6 +426,20 @@ app.post('/api/bookings/check', (req, res) => {
       res.json({ overlap: rows.length > 0, rows });
     }
   );
+});
+
+// archived bookings endpoint
+app.get('/api/bookings/archive', (req, res) => {
+  // optional filter by name via query ?name=...
+  const name = req.query.name || null;
+  let sql = 'SELECT * FROM bookings_archive';
+  const params = [];
+  if (name) { sql += ' WHERE client_name = ? OR creator_name = ?'; params.push(name, name); }
+  sql += ' ORDER BY deleted_at DESC';
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows || []);
+  });
 });
 
 // check whether the current Authorization token grants write permission for bookings

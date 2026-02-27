@@ -43,6 +43,24 @@ db.serialize(() => {
     )`
   );
 
+  // archived bookings (deleted) - store for history
+  db.run(
+    `CREATE TABLE IF NOT EXISTS bookings_archive (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      original_id INTEGER,
+      car_id INTEGER NOT NULL,
+      start_iso TEXT NOT NULL,
+      end_iso TEXT NOT NULL,
+      title TEXT,
+      client_name TEXT,
+      creator_name TEXT,
+      description TEXT,
+      deleted_by TEXT,
+      deleted_at TEXT,
+      FOREIGN KEY(car_id) REFERENCES cars(id)
+    )`
+  );
+
   // Ensure columns exist for older DBs
   db.all("PRAGMA table_info(bookings)", [], (err, rows) => {
     if (err || !rows) return;

@@ -1,6 +1,6 @@
 import { fetchText } from './utils.js';
 
-const partials = ['home','bookings','notifications','summary','settings','carModal','bookingModal','dayBookingsModal'];
+const partials = ['home','bookings','summary','settings','carModal','bookingModal','dayBookingsModal'];
 
 async function loadPartials(){
   let app = document.getElementById('app');
@@ -40,7 +40,6 @@ import { initDevice, subscribePush } from './device.js';
 import { initHome } from './home.js';
 import { initBookings } from './bookings.js';
 import { initSettings } from './settings.js';
-import { initNotifications } from './notifications.js';
 import { initSummary } from './summary.js';
 
 async function start(){
@@ -56,7 +55,6 @@ async function start(){
   initHome();
   initBookings();
   initSettings();
-  initNotifications();
   initSummary();
 
   // WebSocket realtime updates
@@ -73,9 +71,6 @@ async function start(){
               window.dispatchEvent(new CustomEvent('booking:created', { detail: msg.booking }));
             } else if(msg.type === 'booking_deleted'){
               window.dispatchEvent(new CustomEvent('booking:deleted', { detail: msg.booking }));
-            } else if(msg.type === 'notification'){
-              // generic notification broadcast
-              window.dispatchEvent(new CustomEvent('notification:received', { detail: msg }));
             }
           }catch(e){}
         });
