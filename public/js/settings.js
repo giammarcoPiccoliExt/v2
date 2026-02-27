@@ -115,6 +115,13 @@ export async function initSettings(){
   // Users modal: list devices and allow approve/remove
   const passcodesBtn = document.getElementById('passcodesBtn');
 
+  // passcodes modal elements
+  const passcodesModal = document.getElementById('passcodesModal');
+  const passcodesList = document.getElementById('passcodesList');
+  const newPassName = document.getElementById('newPassName');
+  const newPassValue = document.getElementById('newPassValue');
+  const addPassBtn = document.getElementById('addPassBtn');
+
   async function loadDevices(){
     try{
           const devs = await fetchJson('/api/devices');
@@ -139,7 +146,7 @@ export async function initSettings(){
     }catch(e){ console.error('load devices', e); }
   }
   passcodesBtn?.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.remove('hidden'); loadPasscodes(); });
-  const passcodesCloseBtn = document.getElementById('passcodesCloseBtn');
+  const passcodesCloseBtn = document.getElementById('passcodesModalClose');
   if(passcodesCloseBtn) passcodesCloseBtn.addEventListener('click', ()=>{ if(!passcodesModal) return; passcodesModal.classList.add('hidden'); });
   // modal close top-left
   document.getElementById('usersModalClose')?.addEventListener('click', ()=>{ usersModal.classList.add('hidden'); });

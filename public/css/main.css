@@ -1,5 +1,5 @@
 /* Consolidated main stylesheet extracted from inline styles */
-:root{--row-height:64px; --cell-width:120px}
+:root{--row-height:64px; --cell-width:120px; --row-border-color:#ccc}
 body{font-family:Arial;margin:0;padding:0;background:#fff}
 .page{display:none;padding:12px}
 .page.active{display:block}
@@ -17,8 +17,11 @@ body{font-family:Arial;margin:0;padding:0;background:#fff}
 .page-btn .icon{font-size:16px}
 .page-btn.primary{background:#f0f0f0;border-color:#e0e0e0}
 .grid{overflow:auto;white-space:nowrap}
-.row{display:flex;align-items:center}
-.cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);height:var(--row-height);min-height:var(--row-height);max-height:var(--row-height);border:1px solid #ddd;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;box-sizing:border-box;overflow:hidden}
+.row{display:flex;align-items:center;position:relative}
+.cell{width:var(--cell-width);min-width:var(--cell-width);max-width:var(--cell-width);height:var(--row-height);min-height:var(--row-height);max-height:var(--row-height);border:1px solid #ddd;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;box-sizing:border-box;overflow:hidden;border-bottom:2px solid var(--row-border-color)}
+
+/* draw a continuous horizontal line across each row (over cards) without affecting layout */
+.row::after{content:'';position:absolute;left:0;right:0;height:2px;background:var(--row-border-color);bottom:0;pointer-events:none;z-index:3}
 .cell .booking-client{margin-bottom:4px}
 .cell.today{background:#e6e6e6}
 .cell .day-week{font-size:11px;font-weight:700;text-transform:lowercase;color:#333}
