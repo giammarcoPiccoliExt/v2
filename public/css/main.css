@@ -104,8 +104,8 @@ body {
   height: var(--row-height);
   min-height: var(--row-height);
   max-height: var(--row-height);
-  border-bottom: 1px solid #414040;
   border: 1px solid #ddd;
+  border-bottom: 1px solid #000000;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
