@@ -550,9 +550,10 @@ header {
   align-items: flex-start;
 }
 .cars-col {
-  width: 20vw;
-  min-width: 120px;
-  flex: 0 0 20vw;
+  /* size to content: don't stretch wider than necessary */
+  width: max-content;
+  min-width: 0;
+  flex: 0 0 auto;
   padding-right: 8px;
   display: flex;
   flex-direction: column;
@@ -575,6 +576,13 @@ header {
   border-radius: 6px;
   border: 1px solid #ddd;
   margin-bottom: 0;
+}
+
+/* separator line between car entries without shifting layout */
+.cars-col .car-card + .car-card {
+  border-top: 1px solid #e8e8e8;
+  margin-top: 8px;
+  padding-top: 6px;
 }
 
 /* ensure header row border is not heavier than column borders */
