@@ -208,6 +208,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 100000;
 }
 .modal-content {
   background: #fff;
@@ -774,6 +775,8 @@ body.login-page {
 .days-wrap {
   display: inline-flex;
 }
+/* ensure calendar cells stay below modals */
+.days-wrap .cell { z-index: 0; position: relative; }
 .cell.booked {
   background: transparent; /* background controlled inline per-car */
 }
