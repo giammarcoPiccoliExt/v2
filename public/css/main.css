@@ -496,7 +496,7 @@ header {
 }
 #bookings .bookings-body .sidebar {
   /* increase sidebar share so machines read better on bookings page */
-  flex: 0 0 22%;
+  flex: 0 0 5%;
   max-width: 22%;
   min-width: 160px;
   box-sizing: border-box;
