@@ -155,7 +155,22 @@ export async function initHome(){
           const creatorName = b.creator_name || 'Utente';
           const clientLabel = b.client_name || b.title || 'Prenotazione';
           const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
+          // repeat client name only every 3 days starting from booking start
+          let showClient = true;
+          try{
+            const toLocalDate = (isoOrDay)=>{ // accept 'YYYY-MM-DD' or full ISO
+              const y = isoOrDay.slice(0,4); const m = isoOrDay.slice(5,7); const d = isoOrDay.slice(8,10);
+              return new Date(parseInt(y,10), parseInt(m,10)-1, parseInt(d,10));
+            };
+            const startDay = (b.start_iso||'').slice(0,10);
+            const curDay = dayKey; // localISO(day) already
+            if(startDay && curDay){
+              const sd = toLocalDate(startDay); const cd = toLocalDate(curDay);
+              const diff = Math.round((cd - sd) / 86400000);
+              showClient = (diff % 3) === 0;
+            }
+          }catch(e){ showClient = true; }
+          c.innerHTML = `${showClient ? `<div class="booking-client">${esc(clientLabel)}</div>` : '<div class="booking-client" style="visibility:hidden;height:1em">&nbsp;</div>'}<div class="booking-creator">${esc(creatorName)}</div>`;
           try{
             const startLabel = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : (b.start_iso||'').slice(0,10);
             const endLabel = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : (b.end_iso||'').slice(0,10);
