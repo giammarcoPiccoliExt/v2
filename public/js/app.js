@@ -23,7 +23,18 @@ async function loadPartials(){
 // basic page nav (bottom nav stays in index.html)
 function initNav(){
   const pages = document.querySelectorAll('.page');
+  // disable access to settings if no passcode token is present
+  const hasToken = !!localStorage.getItem('passcode_token');
+  const settingsNav = document.querySelector('.nav-item[data-target="settings"]');
+  if(settingsNav && !hasToken){ settingsNav.classList.add('disabled'); }
+
   document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>{
+    const target = el.dataset.target;
+    // prevent navigating to settings when not logged in
+    if(target === 'settings' && !localStorage.getItem('passcode_token')){
+      alert('Accesso alle impostazioni riservato: effettua il login con un passcode.');
+      return;
+    }
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     el.classList.add('active');
     const t = el.dataset.target;

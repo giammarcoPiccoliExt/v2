@@ -70,6 +70,11 @@ body {
   width: 1px;
   background: #ddd;
 }
+/* disabled nav item (when not logged in) */
+.nav-item.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
 /* page-level buttons styled like bottom nav (compact) */
 .page-btn {
   display: inline-flex;
