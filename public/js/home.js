@@ -58,6 +58,20 @@ export async function initHome(){
     }catch(e){/* ignore */}
   }
 
+  // soften a hex color by mixing it with white (amount 0..1)
+  function softenHex(hex, amount){
+    try{
+      if(!hex) return '';
+      hex = hex.replace('#','');
+      if(hex.length===3) hex = hex.split('').map(h=>h+h).join('');
+      const r = parseInt(hex.substring(0,2),16);
+      const g = parseInt(hex.substring(2,4),16);
+      const b = parseInt(hex.substring(4,6),16);
+      const mix = (v) => Math.round(v + (255 - v) * amount);
+      return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+    }catch(e){ return hex; }
+  }
+
   function renderCalendar(cars, bookings, startDate){
     container.innerHTML = '';
     carsCol.innerHTML = '';
@@ -106,21 +120,38 @@ export async function initHome(){
       const r = document.createElement('div'); r.className = 'row';
       const namePlaceholder = document.createElement('div'); namePlaceholder.className = 'car-name'; r.appendChild(namePlaceholder);
       const daysWrap = document.createElement('div'); daysWrap.className = 'days-wrap';
-      days.forEach(day=>{
+      for(let i=0;i<days.length;i++){
+        const day = days[i];
         const dayKey = day.toISOString().slice(0,10);
-        const c = document.createElement('div'); c.className = 'cell';
-        if(dayKey === todayIso) c.classList.add('today');
+        // find a booking that covers this day
         const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
-        if(b){
-          c.classList.add('booked');
-          const creatorName = b.creator_name || 'Utente';
-          const clientLabel = b.client_name || b.title || 'Prenotazione';
-          const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
-          c.title = `${clientLabel} — ${creatorName} (${b.start_iso.slice(0,10)}→${b.end_iso.slice(0,10)})`;
+        if(!b){
+          const c = document.createElement('div'); c.className = 'cell'; if(dayKey === todayIso) c.classList.add('today');
+          daysWrap.appendChild(c);
+          continue;
         }
+        // if previous day is part of same booking, skip rendering here (it was rendered earlier as a span)
+        if(i>0){ const prevKey = days[i-1].toISOString().slice(0,10); const prevB = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= prevKey && bk.end_iso.slice(0,10) >= prevKey); if(prevB && prevB.id === b.id) continue; }
+
+        // compute span length (how many consecutive days this booking covers starting at i)
+        let span = 1; for(let j=i+1;j<days.length;j++){ const k = days[j].toISOString().slice(0,10); if(b.start_iso.slice(0,10) <= k && b.end_iso.slice(0,10) >= k) span++; else break; }
+
+        const c = document.createElement('div'); c.className = 'cell booking-span';
+        if(dayKey === todayIso) c.classList.add('today');
+        // span width using CSS variable for cell width
+        c.style.width = `calc(var(--cell-width) * ${span})`;
+        c.classList.add('booked');
+        if(car && car.color){ const bg = softenHex(car.color, 0.72); c.style.background = bg; c.style.borderColor = 'rgba(0,0,0,0.06)'; c.style.color = '#111'; }
+        const creatorName = b.creator_name || 'Utente';
+        const clientLabel = b.client_name || b.title || 'Prenotazione';
+        const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        // center the booking label across the span
+        c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
+        c.title = `${clientLabel} — ${creatorName} (${b.start_iso.slice(0,10)}→${b.end_iso.slice(0,10)})`;
         daysWrap.appendChild(c);
-      });
+        // advance index by span-1 because we've consumed these days
+        i += span - 1;
+      }
       r.appendChild(daysWrap);
       container.appendChild(r);
     });
@@ -208,6 +239,13 @@ export async function initHome(){
     const startInput = document.querySelector('#bookingModal input[name="start_date"]');
     const endInput = document.querySelector('#bookingModal input[name="end_date"]');
     const warning = document.getElementById('overlapWarning');
+
+    // set today's date as placeholder and default if empty
+    try{
+      const today = new Date().toISOString().slice(0,10);
+      if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
+      if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
+    }catch(e){}
 
     function checkOverlap(){
       warning.classList.add('hidden');

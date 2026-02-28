@@ -135,8 +135,18 @@ export function initBookings(){
   }
 
   newBookingBtn?.addEventListener('click', ()=>{
-    // reuse booking modal if present
-    const modal = document.getElementById('bookingModal'); if(modal) modal.classList.remove('hidden');
+    // reuse booking modal if present; set today's date as placeholder/default for date inputs
+    const modal = document.getElementById('bookingModal');
+    if(modal){
+      try{
+        const startInput = modal.querySelector('input[name="start_date"]');
+        const endInput = modal.querySelector('input[name="end_date"]');
+        const today = new Date().toISOString().slice(0,10);
+        if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
+        if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
+      }catch(e){}
+      modal.classList.remove('hidden');
+    }
   });
 
   // day bookings modal open
