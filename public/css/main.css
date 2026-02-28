@@ -513,47 +513,45 @@ header {
   box-sizing: border-box;
 }
 
-/* bookings page: make car-card vertical with swatch on top to allow 3-row layout */
+/* bookings page: use the same horizontal compact car-card as on Home */
 #bookings .bookings-body .sidebar .cars-col .car-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 6px 8px;
-  height: auto; /* allow variable height so content can wrap into rows */
-  max-height: 68px; /* limit vertical white space */
+  position: relative;
+  background: #fff;
   box-sizing: border-box;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin-bottom: 0;
+  width: 100%;
 }
+
 #bookings .bookings-body .sidebar .cars-col .car-card .color-swatch {
-  /* small dot aligned at top of card */
   width: 12px;
   height: 12px;
   border-radius: 6px;
-  flex: 0 0 auto;
-  margin: 0 0 4px 0;
+  flex: 0 0 12px;
+  position: relative;
+  margin-right: 8px;
 }
+
 #bookings .bookings-body .sidebar .cars-col .car-card .car-info {
-  display: block;
+  flex: 1;
   padding-left: 0;
+  min-width: 0;
 }
+
 #bookings .bookings-body .sidebar .cars-col .car-card .car-info strong {
   display: block;
   font-size: 13px;
-  line-height: 1.05;
-  margin-bottom: 2px;
-}
-#bookings .bookings-body .sidebar .cars-col .car-card .car-plate {
-  display: block;
-  font-size: 11px;
-  color: #666;
-  margin-top: 0;
-  line-height: 1.05;
 }
 
-/* reduce separator spacing between cards on bookings page */
-#bookings .cars-col .car-card + .car-card {
-  padding-top: 4px;
-  border-top: 1px solid #f4f4f4;
+#bookings .bookings-body .sidebar .cars-col .car-card .car-plate {
+  font-size: 12px;
+  color: #666;
+  margin-top: 0;
 }
 #bookings .bookings-body .calendar-wrapper {
   flex: 1;
