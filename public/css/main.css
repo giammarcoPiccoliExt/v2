@@ -499,6 +499,17 @@ header {
   max-width: 15%;
   box-sizing: border-box;
 }
+#bookings .bookings-body .sidebar {
+  /* ensure sidebar content does not overflow into the calendar */
+  overflow-x: hidden;
+}
+#bookings .bookings-body .sidebar .cars-col {
+  /* on the bookings page the machines column must fit the sidebar width */
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 100% !important;
+  box-sizing: border-box;
+}
 #bookings .bookings-body .calendar-wrapper {
   flex: 1;
   margin-left: 0;
