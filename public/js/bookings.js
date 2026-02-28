@@ -153,7 +153,12 @@ export function initBookings(){
           const carId = select.value; const s = startInput.value; const e = endInput.value; if(!carId || !s || !e) return;
           const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
           try{
-            const json = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id: parseInt(carId), start_iso, end_iso }) });
+            // include optional exclude id when editing via modal.dataset.editId
+            const modalEl = document.getElementById('bookingModal');
+            const excludeId = modalEl?.dataset?.editId ? parseInt(modalEl.dataset.editId) : null;
+            const body = { car_id: parseInt(carId), start_iso, end_iso };
+            if(excludeId) body.exclude_id = excludeId;
+            const json = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
             if(json.overlap){
               const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
               if(overlapping.length){
@@ -185,6 +190,8 @@ export function initBookings(){
         startInput?.addEventListener('change', checkOverlapLocal);
         endInput?.addEventListener('change', checkOverlapLocal);
       }catch(e){}
+      // ensure this is treated as NEW booking (no edit exclusion)
+      try{ delete modal.dataset.editId; }catch(e){}
       modal.classList.remove('hidden');
     }
   });
@@ -262,10 +269,15 @@ export function initBookings(){
     form.addEventListener('submit', onSubmit);
     const bookingCancelBtn = document.getElementById('bookingCancelBtn');
     if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
+    // mark modal as editing this booking so overlap checks exclude it
+    try{ modal.dataset.editId = String(bk.id); }catch(e){}
     // ensure day selection modal is hidden and bring edit modal to foreground
     document.getElementById('dayBookingsModal')?.classList.add('hidden');
     modal.style.zIndex = 2000;
     modal.classList.remove('hidden');
+    // remove edit marker when modal closed/cancelled
+    const bookingCancelBtn = document.getElementById('bookingCancelBtn');
+    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ try{ delete modal.dataset.editId; }catch(e){}; form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
   }
 
   // refresh on realtime booking events

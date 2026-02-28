@@ -291,7 +291,12 @@ export async function initHome(){
       warning.classList.add('hidden');
       const carId = select.value; const s = startInput.value; const e = endInput.value; if(!carId || !s || !e) return;
       const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
-      fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id: parseInt(carId), start_iso, end_iso }) })
+      // read optional edit id from modal dataset to exclude self when editing
+      const editModal = document.getElementById('bookingModal');
+      const exclude_id = editModal?.dataset?.editId ? parseInt(editModal.dataset.editId) : null;
+      const body = { car_id: parseInt(carId), start_iso, end_iso };
+      if(exclude_id) body.exclude_id = exclude_id;
+      fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
         .then(json=>{
           if(json.overlap){
             const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
@@ -358,7 +363,12 @@ export async function initHome(){
       const start_iso = body.start_date + 'T00:00:00Z'; const end_iso = body.end_date + 'T23:59:59Z';
       const car_id = parseInt(body.car_id);
       // check one more time server-side
-      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id, start_iso, end_iso }) });
+      // include optional exclude id when editing
+      const bm = document.getElementById('bookingModal');
+      const excludeId = bm?.dataset?.editId ? parseInt(bm.dataset.editId) : null;
+      const chkBody = { car_id, start_iso, end_iso };
+      if(excludeId) chkBody.exclude_id = excludeId;
+      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
       const force = !!body.force_booking;
       if(chk.overlap && !force){
         // show detailed overlapping bookings in the warning area so user can delete the specific one
@@ -378,6 +388,10 @@ export async function initHome(){
     const bookingCancelBtn = document.getElementById('bookingCancelBtn');
     if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
   });
+
+  // ensure new-booking clears any edit marker
+  const bookingModalEl = document.getElementById('bookingModal');
+  if(bookingModalEl){ bookingModalEl.addEventListener('show', ()=>{ delete bookingModalEl.dataset.editId; }); }
 
   refresh();
 }

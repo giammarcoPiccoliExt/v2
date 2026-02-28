@@ -417,15 +417,15 @@ app.delete('/api/bookings/:id', (req, res) => {
 // check overlap endpoint
 app.post('/api/bookings/check', (req, res) => {
   const { car_id, start_iso, end_iso } = req.body;
+  const excludeId = req.body.exclude_id || null;
   if (!car_id || !start_iso || !end_iso) return res.status(400).json({ error: 'missing fields' });
-  db.all(
-    `SELECT * FROM bookings WHERE car_id = ? AND NOT (end_iso <= ? OR start_iso >= ?)`,
-    [car_id, start_iso, end_iso],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ overlap: rows.length > 0, rows });
-    }
-  );
+  let sql = `SELECT * FROM bookings WHERE car_id = ? AND NOT (end_iso <= ? OR start_iso >= ?)`;
+  const params = [car_id, start_iso, end_iso];
+  if (excludeId) { sql += ' AND id != ?'; params.push(excludeId); }
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ overlap: rows.length > 0, rows });
+  });
 });
 
 // archived bookings endpoint
