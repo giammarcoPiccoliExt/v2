@@ -141,9 +141,48 @@ export function initBookings(){
       try{
         const startInput = modal.querySelector('input[name="start_date"]');
         const endInput = modal.querySelector('input[name="end_date"]');
+        const select = modal.querySelector('select[name="car_id"]');
+        const warning = document.getElementById('overlapWarning');
         const today = new Date().toISOString().slice(0,10);
         if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
         if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
+
+        async function checkOverlapLocal(){
+          if(!select || !startInput || !endInput) return;
+          const carId = select.value; const s = startInput.value; const e = endInput.value; if(!carId || !s || !e) return;
+          const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
+          try{
+            const json = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id: parseInt(carId), start_iso, end_iso }) });
+            if(json.overlap){
+              const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+              if(overlapping.length){
+                warning.innerHTML = '';
+                const title = document.createElement('div'); title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:'; title.style.fontWeight='600'; title.style.marginBottom='6px';
+                warning.appendChild(title);
+                overlapping.forEach(r => {
+                  const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='8px'; row.style.marginBottom='6px';
+                  const txt = document.createElement('div'); txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`;
+                  const del = document.createElement('button'); del.type='button'; del.className='page-btn del small'; del.textContent='Elimina';
+                  del.addEventListener('click', async ()=>{
+                    if(!confirm('Eliminare questa prenotazione?')) return;
+                    const res = await fetchRaw(`/api/bookings/${r.id}`, { method:'DELETE' });
+                    if(res.status===403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
+                    if(!res.ok){ const j = await res.json(); alert('Errore: '+(j.error||res.status)); return; }
+                    await render();
+                    checkOverlapLocal();
+                  });
+                  row.appendChild(txt); row.appendChild(del); warning.appendChild(row);
+                });
+                warning.classList.remove('hidden');
+                return;
+              }
+            }
+            warning.classList.add('hidden'); warning.innerHTML='';
+          }catch(e){/* ignore */}
+        }
+        select?.addEventListener('change', checkOverlapLocal);
+        startInput?.addEventListener('change', checkOverlapLocal);
+        endInput?.addEventListener('change', checkOverlapLocal);
       }catch(e){}
       modal.classList.remove('hidden');
     }

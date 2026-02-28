@@ -244,17 +244,39 @@ export async function initHome(){
       const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
       fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id: parseInt(carId), start_iso, end_iso }) })
         .then(json=>{
-           if(json.overlap){
-             const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
-             if(overlapping.length){
-               warning.classList.remove('hidden');
-               warning.textContent = 'Conflitto: già prenotato: ' + overlapping.map(r=> (r.title||'') + ' ('+r.start_iso.slice(0,10)+'→'+r.end_iso.slice(0,10)+')').join('; ');
-             } else {
-               // fallback if server reported overlap but no rows match locally
-               warning.classList.remove('hidden');
-               warning.textContent = 'Conflitto: già prenotato.';
-             }
-           } else warning.classList.add('hidden');
+          if(json.overlap){
+            const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+            if(overlapping.length){
+              warning.innerHTML = '';
+              const title = document.createElement('div'); title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:'; title.style.fontWeight = '600'; title.style.marginBottom = '6px';
+              warning.appendChild(title);
+              overlapping.forEach(r => {
+                const row = document.createElement('div'); row.className = 'overlap-row'; row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='8px'; row.style.marginBottom='6px';
+                const txt = document.createElement('div'); txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`;
+                const del = document.createElement('button'); del.type='button'; del.className='page-btn del small'; del.textContent = 'Elimina';
+                del.addEventListener('click', async ()=>{
+                  if(!confirm('Eliminare questa prenotazione?')) return;
+                  try{
+                    const res = await fetchRaw(`/api/bookings/${r.id}`, { method:'DELETE' });
+                    if(res.status===403) { alert('Non autorizzato: effettua il login con un passcode.'); return; }
+                    if(!res.ok){ const j = await res.json(); alert('Errore: '+(j.error||res.status)); return; }
+                    // refresh calendar and re-run check
+                    await refresh();
+                    checkOverlap();
+                  }catch(e){ alert('Errore durante eliminazione'); }
+                });
+                row.appendChild(txt); row.appendChild(del); warning.appendChild(row);
+              });
+              warning.classList.remove('hidden');
+            } else {
+              // fallback
+              warning.classList.remove('hidden');
+              warning.textContent = 'Conflitto: già prenotato.';
+            }
+          } else {
+            warning.classList.add('hidden');
+            warning.innerHTML = '';
+          }
         }).catch(()=>{});
     }
 
@@ -285,8 +307,8 @@ export async function initHome(){
       const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ car_id, start_iso, end_iso }) });
       const force = !!body.force_booking;
       if(chk.overlap && !force){
-        const overlapping = (chk.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
-        alert('Impossibile salvare la prenotazione: conflitto:\n' + overlapping.map(r=> (r.title||'')+' '+r.start_iso+'→'+r.end_iso).join('\n'));
+        // show detailed overlapping bookings in the warning area so user can delete the specific one
+        checkOverlap();
         return;
       }
       const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null, force: force };
