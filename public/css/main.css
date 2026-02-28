@@ -105,7 +105,7 @@ body {
   min-height: var(--row-height);
   max-height: var(--row-height);
   border: 1px solid #ddd;
-  border-bottom: 1px solid #000000;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -777,6 +777,21 @@ body.login-page {
 .cell.booked {
   background: transparent; /* background controlled inline per-car */
 }
+
+/* create a pseudo element to extend booked background slightly and hide hairline gaps */
+.days-wrap .cell.booked {
+  position: relative;
+}
+.days-wrap .cell.booked::before{
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -1px; right: -1px; /* extend 1px to cover subpixel gaps */
+  background: inherit; /* inherit the inline background color set on the cell */
+  z-index: 0;
+  border-radius: inherit;
+}
+.days-wrap .cell.booked > * { position: relative; z-index: 1; }
 
 /* merge adjacent booked cells visually */
 .cell.booked-single {
