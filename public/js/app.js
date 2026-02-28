@@ -26,7 +26,10 @@ function initNav(){
   // disable access to settings if no passcode token is present
   const hasToken = !!localStorage.getItem('passcode_token');
   const settingsNav = document.querySelector('.nav-item[data-target="settings"]');
-  if(settingsNav && !hasToken){ settingsNav.classList.add('disabled'); }
+  if(settingsNav && !hasToken){
+    // remove settings nav entirely when not logged in
+    settingsNav.parentNode && settingsNav.parentNode.removeChild(settingsNav);
+  }
 
   document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>{
     const target = el.dataset.target;
