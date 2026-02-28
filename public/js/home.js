@@ -121,28 +121,11 @@ export async function initHome(){
       const r = document.createElement('div'); r.className = 'row';
       const namePlaceholder = document.createElement('div'); namePlaceholder.className = 'car-name'; r.appendChild(namePlaceholder);
       const daysWrap = document.createElement('div'); daysWrap.className = 'days-wrap';
-
-      // precompute booking spans for this car and map to day indexes so we can show text only in the central cell
-      const bookingsForCar = bookings.filter(bk=> bk.car_id===car.id).map(bk=>{
-        const sKey = (bk.start_iso||'').slice(0,10);
-        const eKey = (bk.end_iso||'').slice(0,10);
-        let sIdx = days.findIndex(d=> localISO(d) === sKey);
-        let eIdx = days.findIndex(d=> localISO(d) === eKey);
-        if(sIdx === -1){ // clamp to visible range
-          sIdx = 0; // if booking starts before view, treat as starting at first visible day
-        }
-        if(eIdx === -1){
-          eIdx = days.length - 1; // if booking ends after view, treat as ending at last visible day
-        }
-        const mid = Math.floor((sIdx + eIdx) / 2);
-        return Object.assign({}, bk, { startKey: sKey, endKey: eKey, startIdx: sIdx, endIdx: eIdx, midIdx: mid });
-      });
-
-      days.forEach((day, i)=>{
+      days.forEach(day=>{
         const dayKey = localISO(day);
         const c = document.createElement('div'); c.className = 'cell';
         if(dayKey === todayIso) c.classList.add('today');
-        const b = bookingsForCar.find(bk=> bk.startKey <= dayKey && bk.endKey >= dayKey);
+        const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
         if(b){
           c.classList.add('booked');
           // use car color (softened) for booking background instead of default red
@@ -153,21 +136,15 @@ export async function initHome(){
             // ensure readable text color
             c.style.color = '#111';
           }
-          // show booking info only in the central cell of the booking span
-          if(i === b.midIdx){
-            const creatorName = b.creator_name || 'Utente';
-            const clientLabel = b.client_name || b.title || 'Prenotazione';
-            const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
-            try{
-              const startLabel = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : (b.start_iso||'').slice(0,10);
-              const endLabel = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : (b.end_iso||'').slice(0,10);
-              c.title = `${clientLabel} — ${creatorName} (${startLabel} → ${endLabel})`;
-            }catch(e){ c.title = `${clientLabel} — ${creatorName}`; }
-          } else {
-            // keep booked cell visually empty (or you could put a small marker)
-            c.innerHTML = '';
-          }
+          const creatorName = b.creator_name || 'Utente';
+          const clientLabel = b.client_name || b.title || 'Prenotazione';
+          const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
+          try{
+            const startLabel = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : (b.start_iso||'').slice(0,10);
+            const endLabel = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : (b.end_iso||'').slice(0,10);
+            c.title = `${clientLabel} — ${creatorName} (${startLabel} → ${endLabel})`;
+          }catch(e){ c.title = `${clientLabel} — ${creatorName}`; }
         }
         daysWrap.appendChild(c);
       });
