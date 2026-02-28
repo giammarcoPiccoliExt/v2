@@ -587,7 +587,6 @@ header {
 /* separator line between car entries without shifting layout */
 .cars-col .car-card + .car-card {
   border-top: 1px solid #e8e8e8;
-  margin-top: 8px;
   padding-top: 6px;
 }
 
