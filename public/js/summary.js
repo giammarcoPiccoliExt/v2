@@ -16,7 +16,9 @@ export function initSummary(){
       const currentAll = bookings.map(b=> Object.assign({}, b, { deleted: false }));
       const archivedAll = archived.map(b=> Object.assign({}, b, { deleted: true }));
       const merged = currentAll.concat(archivedAll);
-      if(merged.length===0){ content.innerHTML = '<div>Nessuna prenotazione trovata a tuo nome.</div>'; return; }
+      // debug info
+      try{ console.log('summary: bookings=', bookings.length, 'archived=', archived.length, 'merged=', merged.length); }catch(e){}
+      if(merged.length===0){ content.innerHTML = '<div>Nessuna prenotazione trovata.</div>'; return; }
 
       // helper per local-ISO date string
       const localISO = (dt)=>{ const d = dt ? new Date(dt) : new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
