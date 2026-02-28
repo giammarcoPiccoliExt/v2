@@ -9,14 +9,13 @@ export function initSummary(){
       const bookings = await fetchJson('/api/bookings');
       const cars = await fetchJson('/api/cars');
       const carMap = new Map(cars.map(c=>[c.id, c]));
+      // show ALL bookings to every user: include live + archived
       const myName = localStorage.getItem('passcode_name') || '';
-      // fetch archived bookings for this user from server
       let archived = [];
-      try{ archived = await fetchJson('/api/bookings/archive?name=' + encodeURIComponent(myName)); }catch(e){ archived = []; }
-      // include bookings that are either created by / for me, or archived bookings that refer to me
-      const mineCurrent = bookings.filter(b=> b.client_name === myName || b.creator_name === myName).map(b=> Object.assign({}, b, { deleted: false }));
-      const mineDeleted = archived.map(b=> Object.assign({}, b, { deleted: true }));
-      const merged = mineCurrent.concat(mineDeleted);
+      try{ archived = await fetchJson('/api/bookings/archive'); }catch(e){ archived = []; }
+      const currentAll = bookings.map(b=> Object.assign({}, b, { deleted: false }));
+      const archivedAll = archived.map(b=> Object.assign({}, b, { deleted: true }));
+      const merged = currentAll.concat(archivedAll);
       if(merged.length===0){ content.innerHTML = '<div>Nessuna prenotazione trovata a tuo nome.</div>'; return; }
 
       // helper per local-ISO date string
