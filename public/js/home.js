@@ -132,7 +132,7 @@ export async function initHome(){
           if(car && car.color){
             const bg = softenHex(car.color, 0.72); // mix heavily with white for softer tone
             c.style.background = bg;
-            c.style.borderColor = 'rgba(0,0,0,0.06)';
+            c.style.borderColor = car.color || 'rgba(0,0,0,0.06)';
             // ensure readable text color
             c.style.color = '#111';
           }
@@ -140,7 +140,11 @@ export async function initHome(){
           const clientLabel = b.client_name || b.title || 'Prenotazione';
           const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
           c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
-          c.title = `${clientLabel} — ${creatorName} (${b.start_iso.slice(0,10)}→${b.end_iso.slice(0,10)})`;
+          try{
+            const startLabel = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : (b.start_iso||'').slice(0,10);
+            const endLabel = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : (b.end_iso||'').slice(0,10);
+            c.title = `${clientLabel} — ${creatorName} (${startLabel} → ${endLabel})`;
+          }catch(e){ c.title = `${clientLabel} — ${creatorName}`; }
         }
         daysWrap.appendChild(c);
       });
@@ -190,8 +194,9 @@ export async function initHome(){
     try{
       // center on tomorrow so today appears slightly to the left of center
       const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-      const todayIso = tomorrow.toISOString().slice(0,10);
-      const todayIndex = days.findIndex(d=> d.toISOString().slice(0,10) === todayIso);
+      const localISO = (dt)=>{ const d = dt || new Date(); const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
+      const todayIso = localISO(tomorrow);
+      const todayIndex = days.findIndex(d=> localISO(d) === todayIso);
       if(typeof todayIndex === 'number' && todayIndex >= 0 && calendarWrapper){
         // compute cell width from header row
         setTimeout(()=>{
@@ -234,7 +239,7 @@ export async function initHome(){
 
     // set today's date as placeholder and default if empty
     try{
-      const today = new Date().toISOString().slice(0,10);
+      const today = (function(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
       if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
     }catch(e){}
@@ -253,7 +258,12 @@ export async function initHome(){
               warning.appendChild(title);
               overlapping.forEach(r => {
                 const row = document.createElement('div'); row.className = 'overlap-row'; row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='8px'; row.style.marginBottom='6px';
-                const txt = document.createElement('div'); txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`;
+                  const txt = document.createElement('div');
+                  try{
+                    const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
+                    const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
+                    txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
+                  }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
                 const del = document.createElement('button'); del.type='button'; del.className='page-btn del small'; del.textContent = 'Elimina';
                 del.addEventListener('click', async ()=>{
                   if(!confirm('Eliminare questa prenotazione?')) return;
