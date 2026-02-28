@@ -69,9 +69,10 @@ export function initBookings(){
       // empty cells before first
       for(let i=0;i<firstWeekday;i++){ const e = document.createElement('div'); e.className='day-cell'; grid.appendChild(e); }
 
+      function localISO(d){ const dt = d || new Date(); const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const day = String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
       for(let d=1; d<=days; d++){
         const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
-        const dateKey = date.toISOString().slice(0,10);
+        const dateKey = localISO(date);
         const cell = document.createElement('div'); cell.className='day-cell';
         const dayLabel = document.createElement('div'); dayLabel.className = 'day-label'; dayLabel.textContent = d;
         cell.appendChild(dayLabel);
@@ -98,7 +99,7 @@ export function initBookings(){
         }
 
         // highlight today
-        const todayIso = new Date().toISOString().slice(0,10);
+        const todayIso = localISO(new Date());
         if(dateKey === todayIso) cell.classList.add('today');
 
         // click to open day bookings modal

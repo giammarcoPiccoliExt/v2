@@ -73,6 +73,7 @@ export async function initHome(){
   }
 
   function renderCalendar(cars, bookings, startDate){
+    function localISO(d){ const dt = d || new Date(); const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const day = String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
     container.innerHTML = '';
     carsCol.innerHTML = '';
     // add a sticky placeholder header in the cars column
@@ -91,10 +92,10 @@ export async function initHome(){
     const headerRow = document.createElement('div'); headerRow.className = 'row';
     const nameCol = document.createElement('div'); nameCol.className = 'car-name'; headerRow.appendChild(nameCol);
     const daysWrapHeader = document.createElement('div'); daysWrapHeader.className = 'days-wrap';
-    const todayIso = new Date().toISOString().slice(0,10);
+    const todayIso = localISO(new Date());
     days.forEach(day=>{
       const c = document.createElement('div'); c.className = 'cell';
-      const dk = day.toISOString().slice(0,10);
+      const dk = localISO(day);
       const wk = day.toLocaleDateString('it', { weekday: 'short' });
       const dm = day.toLocaleDateString('it', { day: 'numeric', month: 'short' });
       c.innerHTML = `<div class="day-week">${wk}</div><div class="day-date">${dm}</div>`;
@@ -121,7 +122,7 @@ export async function initHome(){
       const namePlaceholder = document.createElement('div'); namePlaceholder.className = 'car-name'; r.appendChild(namePlaceholder);
       const daysWrap = document.createElement('div'); daysWrap.className = 'days-wrap';
       days.forEach(day=>{
-        const dayKey = day.toISOString().slice(0,10);
+        const dayKey = localISO(day);
         const c = document.createElement('div'); c.className = 'cell';
         if(dayKey === todayIso) c.classList.add('today');
         const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
