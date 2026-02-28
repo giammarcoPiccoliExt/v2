@@ -495,8 +495,10 @@ header {
   align-items: flex-start;
 }
 #bookings .bookings-body .sidebar {
-  flex: 0 0 15%;
-  max-width: 15%;
+  /* increase sidebar share so machines read better on bookings page */
+  flex: 0 0 22%;
+  max-width: 22%;
+  min-width: 160px;
   box-sizing: border-box;
 }
 #bookings .bookings-body .sidebar {
@@ -509,6 +511,38 @@ header {
   min-width: 0 !important;
   flex: 1 1 100% !important;
   box-sizing: border-box;
+}
+
+/* bookings page: make car-card vertical with swatch on top to allow 3-row layout */
+#bookings .bookings-body .sidebar .cars-col .car-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px;
+  height: auto; /* allow variable height so content can wrap into rows */
+}
+#bookings .bookings-body .sidebar .cars-col .car-card .color-swatch {
+  /* small dot aligned at top of card */
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  flex: 0 0 auto;
+  margin: 0 0 6px 0;
+}
+#bookings .bookings-body .sidebar .cars-col .car-card .car-info {
+  display: block;
+  padding-left: 0;
+}
+#bookings .bookings-body .sidebar .cars-col .car-card .car-info strong {
+  display: block;
+  font-size: 13px;
+}
+#bookings .bookings-body .sidebar .cars-col .car-card .car-plate {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
 }
 #bookings .bookings-body .calendar-wrapper {
   flex: 1;
