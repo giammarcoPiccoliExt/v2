@@ -121,17 +121,33 @@ export async function initHome(){
       const r = document.createElement('div'); r.className = 'row';
       const namePlaceholder = document.createElement('div'); namePlaceholder.className = 'car-name'; r.appendChild(namePlaceholder);
       const daysWrap = document.createElement('div'); daysWrap.className = 'days-wrap';
-      days.forEach(day=>{
+      days.forEach((day, idx)=>{
         const dayKey = localISO(day);
         const c = document.createElement('div'); c.className = 'cell';
         if(dayKey === todayIso) c.classList.add('today');
         const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
         if(b){
+          // detect adjacency to make multi-day bookings look merged
+          const prevDay = (idx>0) ? days[idx-1] : null;
+          const nextDay = (idx < days.length-1) ? days[idx+1] : null;
+          const prevKey = prevDay ? localISO(prevDay) : null;
+          const nextKey = nextDay ? localISO(nextDay) : null;
+          const prevB = prevKey ? bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= prevKey && bk.end_iso.slice(0,10) >= prevKey) : null;
+          const nextB = nextKey ? bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= nextKey && bk.end_iso.slice(0,10) >= nextKey) : null;
+          const isPrevSame = prevB && prevB.id === b.id;
+          const isNextSame = nextB && nextB.id === b.id;
+
           c.classList.add('booked');
+          if(!isPrevSame && !isNextSame) c.classList.add('booked-single');
+          else if(!isPrevSame && isNextSame) c.classList.add('booked-start');
+          else if(isPrevSame && !isNextSame) c.classList.add('booked-end');
+          else c.classList.add('booked-mid');
+
           // use car color (softened) for booking background instead of default red
           if(car && car.color){
             const bg = softenHex(car.color, 0.72); // mix heavily with white for softer tone
             c.style.background = bg;
+            // set outer border color to car color; middle cells will hide inner borders via CSS
             c.style.borderColor = car.color || 'rgba(0,0,0,0.06)';
             // ensure readable text color
             c.style.color = '#111';
