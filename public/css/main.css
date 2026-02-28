@@ -777,6 +777,28 @@ body.login-page {
 .cell.booked {
   background: transparent; /* background controlled inline per-car */
 }
+
+/* merge adjacent booked cells visually */
+.cell.booked-single {
+  border-radius: 8px;
+}
+.cell.booked-start {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-right: none;
+}
+.cell.booked-end {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-left: none;
+}
+.cell.booked-mid {
+  border-left: none;
+  border-right: none;
+}
+
+/* ensure no gap between cells so merged background looks continuous */
+.days-wrap .cell { margin: 0; }
 .car-plate {
   font-size: 12px;
   color: #666;
