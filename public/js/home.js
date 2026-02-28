@@ -132,7 +132,13 @@ export async function initHome(){
           if(car && car.color){
             const bg = softenHex(car.color, 0.72); // mix heavily with white for softer tone
             c.style.background = bg;
-            c.style.borderColor = car.color || 'rgba(0,0,0,0.06)';
+            // do NOT color the border on the start date cell (user request)
+            const isStart = !!(b.start_iso && dayKey === b.start_iso.slice(0,10));
+            if(!isStart){
+              c.style.borderColor = car.color;
+            } else {
+              c.style.borderColor = 'transparent';
+            }
             // ensure readable text color
             c.style.color = '#111';
           }
