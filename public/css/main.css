@@ -773,6 +773,7 @@ body.login-page {
 /* Additional helpers inserted by cleanup patch */
 .days-wrap {
   display: inline-flex;
+  gap: 4px; /* evita che celle adiacenti colorate appaiano unite */
 }
 .cell.booked {
   background: transparent; /* background controlled inline per-car */
