@@ -120,38 +120,29 @@ export async function initHome(){
       const r = document.createElement('div'); r.className = 'row';
       const namePlaceholder = document.createElement('div'); namePlaceholder.className = 'car-name'; r.appendChild(namePlaceholder);
       const daysWrap = document.createElement('div'); daysWrap.className = 'days-wrap';
-      for(let i=0;i<days.length;i++){
-        const day = days[i];
+      days.forEach(day=>{
         const dayKey = day.toISOString().slice(0,10);
-        // find a booking that covers this day
-        const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
-        if(!b){
-          const c = document.createElement('div'); c.className = 'cell'; if(dayKey === todayIso) c.classList.add('today');
-          daysWrap.appendChild(c);
-          continue;
-        }
-        // if previous day is part of same booking, skip rendering here (it was rendered earlier as a span)
-        if(i>0){ const prevKey = days[i-1].toISOString().slice(0,10); const prevB = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= prevKey && bk.end_iso.slice(0,10) >= prevKey); if(prevB && prevB.id === b.id) continue; }
-
-        // compute span length (how many consecutive days this booking covers starting at i)
-        let span = 1; for(let j=i+1;j<days.length;j++){ const k = days[j].toISOString().slice(0,10); if(b.start_iso.slice(0,10) <= k && b.end_iso.slice(0,10) >= k) span++; else break; }
-
-        const c = document.createElement('div'); c.className = 'cell booking-span';
+        const c = document.createElement('div'); c.className = 'cell';
         if(dayKey === todayIso) c.classList.add('today');
-        // span width using CSS variable for cell width
-        c.style.width = `calc(var(--cell-width) * ${span})`;
-        c.classList.add('booked');
-        if(car && car.color){ const bg = softenHex(car.color, 0.72); c.style.background = bg; c.style.borderColor = 'rgba(0,0,0,0.06)'; c.style.color = '#111'; }
-        const creatorName = b.creator_name || 'Utente';
-        const clientLabel = b.client_name || b.title || 'Prenotazione';
-        const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        // center the booking label across the span
-        c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
-        c.title = `${clientLabel} — ${creatorName} (${b.start_iso.slice(0,10)}→${b.end_iso.slice(0,10)})`;
+        const b = bookings.find(bk=>bk.car_id===car.id && bk.start_iso.slice(0,10) <= dayKey && bk.end_iso.slice(0,10) >= dayKey);
+        if(b){
+          c.classList.add('booked');
+          // use car color (softened) for booking background instead of default red
+          if(car && car.color){
+            const bg = softenHex(car.color, 0.72); // mix heavily with white for softer tone
+            c.style.background = bg;
+            c.style.borderColor = 'rgba(0,0,0,0.06)';
+            // ensure readable text color
+            c.style.color = '#111';
+          }
+          const creatorName = b.creator_name || 'Utente';
+          const clientLabel = b.client_name || b.title || 'Prenotazione';
+          const esc = (s)=> String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          c.innerHTML = `<div class="booking-client">${esc(clientLabel)}</div><div class="booking-creator">${esc(creatorName)}</div>`;
+          c.title = `${clientLabel} — ${creatorName} (${b.start_iso.slice(0,10)}→${b.end_iso.slice(0,10)})`;
+        }
         daysWrap.appendChild(c);
-        // advance index by span-1 because we've consumed these days
-        i += span - 1;
-      }
+      });
       r.appendChild(daysWrap);
       container.appendChild(r);
     });

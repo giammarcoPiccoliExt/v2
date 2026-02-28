@@ -114,16 +114,6 @@ body {
   box-sizing: border-box;
   overflow: hidden;
 }
-
-/* style for booking spans that cover multiple consecutive days */
-.cell.booking-span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding-left: 8px;
-  padding-right: 8px;
-}
 .cell .booking-client {
   margin-bottom: 4px;
 }
