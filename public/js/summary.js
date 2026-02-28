@@ -29,9 +29,23 @@ export function initSummary(){
         return (tb.localeCompare(ta));
       });
 
-      // build filter UI
+      // build filter UI (include status filter and small placeholders for date inputs)
       const filters = document.createElement('div'); filters.className = 'summary-filters';
-      filters.innerHTML = `<input type="date" id="filterStart" placeholder="Data inizio"> <input type="date" id="filterEnd" placeholder="Data fine"> <select id="filterCar"><option value="">Tutte le auto</option></select> <button id="applyFilters" class="page-btn">Applica</button> <button id="resetFilters" class="page-btn secondary">Reset</button>`;
+      filters.innerHTML = `
+        <label style="display:inline-block;margin-right:6px">Data inizio<br><input type="date" id="filterStart" title="Data inizio (gg/mm/aaaa)"></label>
+        <label style="display:inline-block;margin-right:6px">Data fine<br><input type="date" id="filterEnd" title="Data fine (gg/mm/aaaa)"></label>
+        <label style="display:inline-block;margin-right:6px">Stato<br>
+          <select id="filterStatus">
+            <option value="">Tutti</option>
+            <option value="in_progress">In corso</option>
+            <option value="past">Passato</option>
+            <option value="future">Futuro</option>
+            <option value="deleted">Eliminata</option>
+          </select>
+        </label>
+        <label style="display:inline-block;margin-right:6px">Auto<br><select id="filterCar"><option value="">Tutte le auto</option></select></label>
+        <button id="applyFilters" class="page-btn">Applica</button>
+        <button id="resetFilters" class="page-btn secondary">Reset</button>`;
       // populate car select
       const carSelect = filters.querySelector('#filterCar');
       cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
@@ -82,14 +96,27 @@ export function initSummary(){
       const applyBtn = filters.querySelector('#applyFilters');
       const resetBtn = filters.querySelector('#resetFilters');
       applyBtn.addEventListener('click', ()=>{
-        const fs = filters.querySelector('#filterStart').value; const fe = filters.querySelector('#filterEnd').value; const fc = filters.querySelector('#filterCar').value;
+        const fs = filters.querySelector('#filterStart').value; const fe = filters.querySelector('#filterEnd').value; const fc = filters.querySelector('#filterCar').value; const fstatus = filters.querySelector('#filterStatus').value;
+        const todayIso = localISO(new Date());
         const filtered = merged.filter(b=>{
+          // car filter
           if(fc && String(b.car_id) !== String(fc)) return false;
-          if(!fs && !fe) return true;
-          const s = (b.start_iso||'').slice(0,10); const e = (b.end_iso||'').slice(0,10);
-          if(fs && fe){ return !(e < fs || s > fe); }
-          if(fs){ return !(e < fs); }
-          if(fe){ return !(s > fe); }
+          // date range filter
+          if(fs || fe){
+            const s = (b.start_iso||'').slice(0,10); const e = (b.end_iso||'').slice(0,10);
+            if(fs && fe){ if(e < fs || s > fe) return false; }
+            else if(fs){ if(e < fs) return false; }
+            else if(fe){ if(s > fe) return false; }
+          }
+          // status filter
+          if(fstatus){
+            let status = '';
+            if(b.deleted) status = 'deleted';
+            else if((b.start_iso||'').slice(0,10) <= todayIso && (b.end_iso||'').slice(0,10) >= todayIso) status = 'in_progress';
+            else if((b.end_iso||'').slice(0,10) < todayIso) status = 'past';
+            else if((b.start_iso||'').slice(0,10) > todayIso) status = 'future';
+            if(status !== fstatus) return false;
+          }
           return true;
         });
         renderList(filtered);
