@@ -287,7 +287,23 @@ export async function initHome(){
   // listen for realtime deletion events
   window.addEventListener('booking:deleted', (ev)=>{ try{ showDeletionBanner(ev.detail); }catch(e){} });
   // also show banner when navigating to home in case deletion happened while on other page
-  window.addEventListener('page:changed', (ev)=>{ try{ if(ev.detail === 'home'){ /* re-scan archived deletions? */ } }catch(e){} });
+  window.addEventListener('page:changed', (ev)=>{ try{ if(ev.detail === 'home'){ checkArchivedDeletions(); } }catch(e){} });
+
+  // check archived deletions for this user (in case deletion happened while offline or on other page)
+  async function checkArchivedDeletions(){
+    try{
+      const myName = localStorage.getItem('passcode_name') || '';
+      if(!myName) return;
+      const rows = await fetchJson(`/api/bookings/archive?name=${encodeURIComponent(myName)}`);
+      if(!rows || !rows.length) return;
+      rows.forEach(r=>{
+        try{ showDeletionBanner(r); }catch(e){}
+      });
+    }catch(e){/* ignore errors */}
+  }
+
+  // run once on init to catch missed deletion events
+  try{ checkArchivedDeletions(); }catch(e){}
 
   // Listen for realtime booking events to refresh calendar
   window.addEventListener('booking:created', ()=>{ refresh(); });
