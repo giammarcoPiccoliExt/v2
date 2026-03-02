@@ -391,19 +391,26 @@ export async function initHome(){
                       const closeBtn = document.getElementById('changeResolveClose');
                       const cancelBtn = document.getElementById('changeResolveCancel');
                       const form = document.getElementById('changeResolveForm');
-                      // reset UI
+                      // reset UI: keep controls hidden until user clicks buttons
                       carArea.classList.add('hidden'); dateArea.classList.add('hidden');
-                      // populate car options
-                      fetchCars().then(carsList=>{
-                        carSelect.innerHTML = '';
-                        carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
-                        // preselect current bookingModal car if present
-                        try{ const bmSel = document.querySelector('#bookingModal select[name="car_id"]'); if(bmSel && bmSel.value) carSelect.value = bmSel.value; }catch(e){}
-                      }).catch(()=>{});
-                      // prefill dates from booking modal
+                      // ensure modal sits above the booking modal (force high z-index & fixed positioning)
+                      try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '20000'; }catch(e){}
+                      // cache current booking modal values for later prefill
+                      let bmCarVal = null;
+                      try{ const bmSel = document.querySelector('#bookingModal select[name="car_id"]'); if(bmSel && bmSel.value) bmCarVal = bmSel.value; }catch(e){}
                       try{ const bmStart = document.querySelector('#bookingModal input[name="start_date"]'); const bmEnd = document.querySelector('#bookingModal input[name="end_date"]'); if(bmStart) startInputCR.value = bmStart.value || bmStart.placeholder || ''; if(bmEnd) endInputCR.value = bmEnd.value || bmEnd.placeholder || ''; }catch(e){}
-                      // set button handlers
-                      const showCar = ()=>{ carArea.classList.remove('hidden'); dateArea.classList.add('hidden'); };
+                      // set button handlers: fetch cars lazily only when Car button clicked
+                      const showCar = async ()=>{
+                        try{
+                          if((carSelect.options||[]).length === 0){
+                            const carsList = await fetchCars();
+                            carSelect.innerHTML = '';
+                            carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
+                            if(bmCarVal) try{ carSelect.value = bmCarVal; }catch(e){}
+                          }
+                        }catch(e){}
+                        carArea.classList.remove('hidden'); dateArea.classList.add('hidden');
+                      };
                       const showDate = ()=>{ dateArea.classList.remove('hidden'); carArea.classList.add('hidden'); };
                       btnCar.onclick = showCar; btnDate.onclick = showDate;
                       const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; };
