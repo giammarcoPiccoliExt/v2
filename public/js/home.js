@@ -386,40 +386,25 @@ export async function initHome(){
                       const carSelect = changeModal.querySelector('select[name="car_id"]');
                       const startInputCR = changeModal.querySelector('input[name="start_date"]');
                       const endInputCR = changeModal.querySelector('input[name="end_date"]');
-                      const btnCar = document.getElementById('changeResolveCarBtn');
-                      const btnDate = document.getElementById('changeResolveDateBtn');
                       const closeBtn = document.getElementById('changeResolveClose');
                       const cancelBtn = document.getElementById('changeResolveCancel');
                       const form = document.getElementById('changeResolveForm');
-                      // reset UI: keep controls hidden until user clicks buttons
-                      carArea.classList.add('hidden'); dateArea.classList.add('hidden');
-                      // ensure modal sits above the booking modal (force high z-index & fixed positioning)
+                      // show both controls immediately (no buttons)
                       try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '200001'; }catch(e){}
-                      // target the existing booking (r) — we will edit that booking on submit
                       const targetBooking = r;
-                      // prefill controls from the existing booking values
                       let bmCarVal = targetBooking && targetBooking.car_id ? String(targetBooking.car_id) : null;
                       try{ if(targetBooking && targetBooking.start_iso) startInputCR.value = (targetBooking.start_iso||'').slice(0,10); if(targetBooking && targetBooking.end_iso) endInputCR.value = (targetBooking.end_iso||'').slice(0,10); }catch(e){}
-                      // set button handlers: fetch cars lazily only when Car button clicked
-                      const showCar = async ()=>{
-                        try{
-                          if((carSelect.options||[]).length === 0){
-                            const carsList = await fetchCars();
-                            carSelect.innerHTML = '';
-                            carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
-                            if(bmCarVal) try{ carSelect.value = bmCarVal; }catch(e){}
-                          }
-                        }catch(e){}
-                        carArea.classList.remove('hidden'); dateArea.classList.add('hidden');
-                      };
-                      const showDate = ()=>{
-                        dateArea.classList.remove('hidden');
-                        carArea.classList.add('hidden');
-                        // make the date area layout horizontal when visible
-                        try{ dateArea.style.display = 'flex'; dateArea.style.flexDirection = 'row'; dateArea.style.alignItems = 'center'; dateArea.style.gap = '8px'; }catch(e){}
-                      };
-                      btnCar.onclick = showCar; btnDate.onclick = showDate;
-                      const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; try{ dateArea.style.display=''; dateArea.style.flexDirection=''; dateArea.style.alignItems=''; dateArea.style.gap=''; }catch(e){} };
+                      // populate car select immediately
+                      try{
+                        fetchCars().then(carsList=>{
+                          carSelect.innerHTML = '';
+                          carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
+                          if(bmCarVal) try{ carSelect.value = bmCarVal; }catch(e){}
+                        }).catch(()=>{});
+                      }catch(e){}
+                      carArea.classList.remove('hidden'); dateArea.classList.remove('hidden');
+                      try{ dateArea.style.display = 'flex'; dateArea.style.flexDirection = 'row'; dateArea.style.alignItems = 'center'; dateArea.style.gap = '8px'; }catch(e){}
+                      const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; try{ dateArea.style.display=''; dateArea.style.flexDirection=''; dateArea.style.alignItems=''; dateArea.style.gap=''; }catch(e){} };
                       const onSubmit = async (ev)=>{
                         ev.preventDefault();
                         try{

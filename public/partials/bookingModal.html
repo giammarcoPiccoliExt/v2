@@ -45,13 +45,10 @@
     <div class="modal-content">
       <button class="modal-close" id="changeResolveClose">✕</button>
       <h4 id="changeResolveTitle">Modifica prenotazione</h4>
-      <div id="changeResolveButtons" style="display:flex;gap:8px;margin-bottom:8px">
-        <button type="button" id="changeResolveCarBtn" class="page-btn">Cambia Auto</button>
-        <button type="button" id="changeResolveDateBtn" class="page-btn">Cambia Data</button>
-      </div>
+      <!-- removed separate buttons: show controls directly -->
       <form id="changeResolveForm">
-        <div id="changeResolveCar" class="field hidden"><label>Auto</label><select name="car_id"></select></div>
-        <div id="changeResolveDate" class="field hidden" style="gap:8px;align-items:center">
+        <div id="changeResolveCar" class="field"><label>Auto</label><select name="car_id"></select></div>
+        <div id="changeResolveDate" class="field" style="display:flex;gap:8px;align-items:center">
           <div style="flex:1"><label>Inizio</label><input type="date" name="start_date" /></div>
           <div style="flex:1"><label>Fine</label><input type="date" name="end_date" /></div>
         </div>
