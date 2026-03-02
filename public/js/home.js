@@ -433,16 +433,20 @@ export async function initHome(){
                             // success: close modal and refresh calendar
                             changeModal.classList.add('hidden'); cleanup();
                             await refresh();
-                            // if the booking creation modal is still open, re-trigger its change handlers
+                            // if the booking creation modal is still open, re-trigger its change handlers (after short delay)
                             try{
                               const bm = document.getElementById('bookingModal');
                               if(bm && !bm.classList.contains('hidden')){
-                                const sel = bm.querySelector('select[name="car_id"]');
-                                const sIn = bm.querySelector('input[name="start_date"]');
-                                const eIn = bm.querySelector('input[name="end_date"]');
-                                if(sel) sel.dispatchEvent(new Event('change'));
-                                if(sIn) sIn.dispatchEvent(new Event('change'));
-                                if(eIn) eIn.dispatchEvent(new Event('change'));
+                                setTimeout(()=>{
+                                  try{
+                                    const sel = bm.querySelector('select[name="car_id"]');
+                                    const sIn = bm.querySelector('input[name="start_date"]');
+                                    const eIn = bm.querySelector('input[name="end_date"]');
+                                    if(sel) sel.dispatchEvent(new Event('change'));
+                                    if(sIn) sIn.dispatchEvent(new Event('change'));
+                                    if(eIn) eIn.dispatchEvent(new Event('change'));
+                                  }catch(e){}
+                                }, 250);
                               }
                             }catch(e){}
                             return;
