@@ -359,46 +359,12 @@ export async function initHome(){
                   }catch(e){ alert('Errore durante eliminazione'); }
                 });
                 const edit = document.createElement('button'); edit.type='button'; edit.className='page-btn edit small'; edit.textContent = 'Modifica';
-                edit.addEventListener('click', async ()=>{
-                  try{
-                    // open booking modal and populate fields for editing this booking
-                    const modal = document.getElementById('bookingModal');
-                    const form = document.getElementById('bookingModalForm');
-                    if(!modal || !form) return;
-                    // populate car select
-                    const select = form.querySelector('select[name="car_id"]');
-                    try{
-                      const cars = await fetchCars();
-                      select.innerHTML = '';
-                      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} (${c.plate||''})`; if(c.id===r.car_id) o.selected=true; select.appendChild(o); });
-                    }catch(e){}
-                    // populate inputs
-                    form.querySelector('input[name="start_date"]').value = (r.start_iso||'').slice(0,10);
-                    form.querySelector('input[name="end_date"]').value = (r.end_iso||'').slice(0,10);
-                    form.querySelector('input[name="client_name"]').value = r.client_name || '';
-                    form.querySelector('input[name="description"]').value = r.description || '';
-                    // mark modal as editing this booking so overlap checks exclude it
-                    try{ modal.dataset.editId = String(r.id); }catch(e){}
-                    // remove any previous submit handler
-                    try{ if(modal._onSubmit){ form.removeEventListener('submit', modal._onSubmit); delete modal._onSubmit; } }catch(e){}
-                    // attach submit handler for PUT
-                    modal._onSubmit = async function(e){
-                      e.preventDefault();
-                      const data = new FormData(form); const body = Object.fromEntries(data.entries());
-                      const payload = { car_id: parseInt(body.car_id), start_iso: body.start_date+'T00:00:00Z', end_iso: body.end_date+'T23:59:59Z', title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
-                      try{
-                        const res = await fetchRaw(`/api/bookings/${r.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
-                        if(res.ok){ alert('Aggiornato'); modal.classList.add('hidden'); form.removeEventListener('submit', modal._onSubmit); delete modal._onSubmit; try{ delete modal.dataset.editId; }catch(e){}; refresh(); }
-                        else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
-                      }catch(e){ alert('Errore durante aggiornamento'); }
-                    };
-                    form.addEventListener('submit', modal._onSubmit);
-                    // cancel handler
-                    const bookingCancelBtn = document.getElementById('bookingCancelBtn');
-                    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ try{ if(modal._onSubmit) form.removeEventListener('submit', modal._onSubmit); delete modal._onSubmit; delete modal.dataset.editId; }catch(e){}; modal.classList.add('hidden'); };
-                    // show modal
-                    modal.classList.remove('hidden');
-                  }catch(e){ console.error('Failed to open inline edit', e); }
+                edit.addEventListener('click', ()=>{
+                  try{ localStorage.setItem('open_edit_booking_id', String(r.id)); }catch(e){}
+                  // hide booking modal and navigate to bookings page
+                  try{ document.getElementById('bookingModal')?.classList.add('hidden'); }catch(e){}
+                  const nav = document.querySelector('.nav-item[data-target="bookings"]');
+                  if(nav) nav.click(); else try{ location.href = '/'; }catch(e){}
                 });
                 const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.appendChild(edit); actions.appendChild(del);
                 row.appendChild(txt); row.appendChild(actions); warning.appendChild(row);

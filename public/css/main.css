@@ -347,23 +347,6 @@ header {
   gap: 8px;
   align-items: center;
 }
-
-/* Special styling for booking modal: light blue background and adjusted title color */
-#bookingModal .modal-content {
-  background: linear-gradient(180deg, #eaf6ff 0%, #dff2ff 100%);
-  border: 1px solid #cfeafc;
-  color: #083344;
-}
-#bookingModal .modal-content h4 {
-  color: #04507a;
-}
-#bookingModal .modal-content input[type="text"],
-#bookingModal .modal-content input[type="date"],
-#bookingModal .modal-content input[type="number"],
-#bookingModal .modal-content select,
-#bookingModal .modal-content textarea {
-  background: #fff; /* keep inputs white for readability */
-}
 .modal .modal-content .actions .spacer {
   flex: 1;
 }
