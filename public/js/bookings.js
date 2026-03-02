@@ -319,7 +319,7 @@ export function initBookings(){
     if(!modal) return;
     const form = document.getElementById('bookingModalForm');
     // set booking modal title to client name (not "Nuova Prenotazione")
-    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = bk.client_name || 'Cliente';
+    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = 'Modifica' || 'Modifica';
     form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
     const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
