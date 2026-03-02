@@ -376,7 +376,62 @@ export async function initHome(){
                 });
                 const edit = document.createElement('button'); edit.type='button'; edit.className='page-btn edit small'; edit.textContent = 'Modifica';
                 edit.addEventListener('click', ()=>{
-                  try{ document.getElementById('bookingModal')?.classList.add('hidden'); }catch(e){}
+                  try{ const bookingModalEl = document.getElementById('bookingModal');
+                    // if user is creating a new booking (booking modal open) show change-resolve modal to adjust the new booking
+                    if(bookingModalEl && !bookingModalEl.classList.contains('hidden')){
+                      // open changeResolveModal
+                      const changeModal = document.getElementById('changeResolveModal'); if(!changeModal) return;
+                      const carArea = document.getElementById('changeResolveCar');
+                      const dateArea = document.getElementById('changeResolveDate');
+                      const carSelect = changeModal.querySelector('select[name="car_id"]');
+                      const startInputCR = changeModal.querySelector('input[name="start_date"]');
+                      const endInputCR = changeModal.querySelector('input[name="end_date"]');
+                      const btnCar = document.getElementById('changeResolveCarBtn');
+                      const btnDate = document.getElementById('changeResolveDateBtn');
+                      const closeBtn = document.getElementById('changeResolveClose');
+                      const cancelBtn = document.getElementById('changeResolveCancel');
+                      const form = document.getElementById('changeResolveForm');
+                      // reset UI
+                      carArea.classList.add('hidden'); dateArea.classList.add('hidden');
+                      // populate car options
+                      fetchCars().then(carsList=>{
+                        carSelect.innerHTML = '';
+                        carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
+                        // preselect current bookingModal car if present
+                        try{ const bmSel = document.querySelector('#bookingModal select[name="car_id"]'); if(bmSel && bmSel.value) carSelect.value = bmSel.value; }catch(e){}
+                      }).catch(()=>{});
+                      // prefill dates from booking modal
+                      try{ const bmStart = document.querySelector('#bookingModal input[name="start_date"]'); const bmEnd = document.querySelector('#bookingModal input[name="end_date"]'); if(bmStart) startInputCR.value = bmStart.value || bmStart.placeholder || ''; if(bmEnd) endInputCR.value = bmEnd.value || bmEnd.placeholder || ''; }catch(e){}
+                      // set button handlers
+                      const showCar = ()=>{ carArea.classList.remove('hidden'); dateArea.classList.add('hidden'); };
+                      const showDate = ()=>{ dateArea.classList.remove('hidden'); carArea.classList.add('hidden'); };
+                      btnCar.onclick = showCar; btnDate.onclick = showDate;
+                      const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; };
+                      const onSubmit = (ev)=>{
+                        ev.preventDefault();
+                        // apply changes to bookingModal inputs
+                        try{
+                          const bmStart = document.querySelector('#bookingModal input[name="start_date"]');
+                          const bmEnd = document.querySelector('#bookingModal input[name="end_date"]');
+                          const bmSel = document.querySelector('#bookingModal select[name="car_id"]');
+                          if(!bmStart || !bmEnd || !bmSel) return;
+                          // if car area visible, update car
+                          if(!carArea.classList.contains('hidden')){ bmSel.value = carSelect.value; bmSel.dispatchEvent(new Event('change')); }
+                          // if date area visible, update dates
+                          if(!dateArea.classList.contains('hidden')){ bmStart.value = startInputCR.value; bmEnd.value = endInputCR.value; bmStart.dispatchEvent(new Event('change')); bmEnd.dispatchEvent(new Event('change')); }
+                        }catch(e){}
+                        // close change modal
+                        changeModal.classList.add('hidden'); cleanup();
+                      };
+                      form.addEventListener('submit', onSubmit);
+                      closeBtn.onclick = ()=>{ changeModal.classList.add('hidden'); cleanup(); };
+                      cancelBtn.onclick = ()=>{ changeModal.classList.add('hidden'); cleanup(); };
+                      // show the modal
+                      changeModal.classList.remove('hidden');
+                      return;
+                    }
+                  }catch(e){}
+                  // fallback: open full edit flow on bookings page
                   try{ window.dispatchEvent(new CustomEvent('openEditBooking', { detail:{ id: r.id } })); }catch(e){}
                   try{ localStorage.setItem('open_edit_booking_id', String(r.id)); }catch(e){}
                 });

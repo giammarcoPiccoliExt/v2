@@ -39,3 +39,26 @@
     </form>
   </div>
 </div>
+
+  <!-- Change-resolve modal for adjusting the NEW booking to avoid conflicts -->
+  <div id="changeResolveModal" class="modal hidden" style="z-index:3100;">
+    <div class="modal-content">
+      <button class="modal-close" id="changeResolveClose">✕</button>
+      <h4 id="changeResolveTitle">Modifica prenotazione</h4>
+      <div id="changeResolveButtons" style="display:flex;gap:8px;margin-bottom:8px">
+        <button type="button" id="changeResolveCarBtn" class="page-btn">Cambia Auto</button>
+        <button type="button" id="changeResolveDateBtn" class="page-btn">Cambia Data</button>
+      </div>
+      <form id="changeResolveForm">
+        <div id="changeResolveCar" class="field hidden"><label>Auto</label><select name="car_id"></select></div>
+        <div id="changeResolveDate" class="field hidden" style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1"><label>Inizio</label><input type="date" name="start_date" /></div>
+          <div style="flex:1"><label>Fine</label><input type="date" name="end_date" /></div>
+        </div>
+        <div class="actions" style="margin-top:8px">
+          <button type="submit" class="page-btn primary">Salva</button>
+          <button type="button" class="page-btn" id="changeResolveCancel">Annulla</button>
+        </div>
+      </form>
+    </div>
+  </div>
