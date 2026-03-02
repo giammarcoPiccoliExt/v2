@@ -311,8 +311,6 @@ export function initBookings(){
       else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
     };
     form.addEventListener('submit', onSubmit);
-    bookingCancelBtn = document.getElementById('bookingCancelBtn');
-    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ form.removeEventListener('submit', onSubmit); document.getElementById('bookingModal').classList.add('hidden'); };
     // mark modal as editing this booking so overlap checks exclude it
     try{ modal.dataset.editId = String(bk.id); }catch(e){}
     // ensure day selection modal is hidden and bring edit modal to foreground
