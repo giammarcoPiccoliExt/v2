@@ -33,6 +33,8 @@ export function initBookings(){
   async function render(){
     let cars = await fetchJson('/api/cars');
     const bookings = await fetchJson('/api/bookings');
+    // expose latest data so other modules can request opening edit modals
+    try{ lastCars = cars; lastBookings = bookings; }catch(e){}
     if(sizeFilter && sizeFilter !== 'all') cars = cars.filter(c=> (c.size||'') === sizeFilter);
 
     // legend
@@ -149,6 +151,21 @@ export function initBookings(){
       }
     }catch(e){}
   }
+
+  // keep latest cars/bookings for external open requests
+  let lastCars = [];
+  let lastBookings = [];
+
+  // listen for global requests to open an edit modal for a booking id
+  window.addEventListener('openEditBooking', (ev)=>{
+    try{
+      const id = ev?.detail?.id ? parseInt(ev.detail.id) : null;
+      if(!id) return;
+      const bk = lastBookings.find(b=>b.id === id);
+      if(bk){ openEditBooking(bk, lastCars); }
+      else { try{ localStorage.setItem('open_edit_booking_id', String(id)); }catch(e){} }
+    }catch(e){}
+  });
 
   newBookingBtn?.addEventListener('click', ()=>{
     // reuse booking modal if present; set today's date as placeholder/default for date inputs

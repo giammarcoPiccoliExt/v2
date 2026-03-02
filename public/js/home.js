@@ -360,11 +360,9 @@ export async function initHome(){
                 });
                 const edit = document.createElement('button'); edit.type='button'; edit.className='page-btn edit small'; edit.textContent = 'Modifica';
                 edit.addEventListener('click', ()=>{
-                  try{ localStorage.setItem('open_edit_booking_id', String(r.id)); }catch(e){}
-                  // hide booking modal and navigate to bookings page
                   try{ document.getElementById('bookingModal')?.classList.add('hidden'); }catch(e){}
-                  const nav = document.querySelector('.nav-item[data-target="bookings"]');
-                  if(nav) nav.click(); else try{ location.href = '/'; }catch(e){}
+                  try{ window.dispatchEvent(new CustomEvent('openEditBooking', { detail:{ id: r.id } })); }catch(e){}
+                  try{ localStorage.setItem('open_edit_booking_id', String(r.id)); }catch(e){}
                 });
                 const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.appendChild(edit); actions.appendChild(del);
                 row.appendChild(txt); row.appendChild(actions); warning.appendChild(row);
