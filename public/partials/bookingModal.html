@@ -17,3 +17,20 @@
     </form>
   </div>
 </div>
+
+<!-- Edit overlay modal shown above the new-booking modal when needed -->
+<div id="editOverlayModal" class="modal hidden" style="z-index:3000;">
+  <div class="modal-content">
+    <button class="modal-close" id="editOverlayClose">✕</button>
+    <h4 id="editOverlayTitle">Cliente</h4>
+    <form id="editOverlayForm">
+      <div class="field"><label>Inizio</label><input type="date" name="start_date" required /></div>
+      <div class="field"><label>Fine</label><input type="date" name="end_date" required /></div>
+      <div class="field"><label>Auto</label><select name="car_id" required></select></div>
+      <div class="actions">
+        <button type="submit" class="page-btn primary" id="editOverlaySave">Salva</button>
+        <button type="button" class="page-btn" id="editOverlayCancel">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>

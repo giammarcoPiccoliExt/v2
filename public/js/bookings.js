@@ -263,7 +263,36 @@ export function initBookings(){
 
   // open booking modal to edit existing booking
   function openEditBooking(bk, cars){
-    const modal = document.getElementById('bookingModal'); if(!modal) return;
+    const modal = document.getElementById('bookingModal');
+    // if the standard booking modal is already open (creating a new booking), open an overlay modal above it
+    if(modal && !modal.classList.contains('hidden')){
+      const overlay = document.getElementById('editOverlayModal'); if(!overlay) return;
+      const form = document.getElementById('editOverlayForm');
+      form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
+      form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
+      const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
+      // populate car options
+      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+      // submit handler for overlay
+      const onSubmitOverlay = async (e)=>{
+        e.preventDefault();
+        const data = new FormData(form); const body = Object.fromEntries(data.entries());
+        const payload = { car_id: parseInt(body.car_id), start_iso: body.start_date+'T00:00:00Z', end_iso: body.end_date+'T23:59:59Z', title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
+        const res = await fetchRaw(`/api/bookings/${bk.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        if(res.ok){ alert('Aggiornato'); overlay.classList.add('hidden'); render(); form.removeEventListener('submit', onSubmitOverlay); }
+        else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }
+      };
+      form.addEventListener('submit', onSubmitOverlay);
+      const cancelBtn = document.getElementById('editOverlayCancel');
+      const closeBtn = document.getElementById('editOverlayClose');
+      const cancelHandler = ()=>{ form.removeEventListener('submit', onSubmitOverlay); overlay.classList.add('hidden'); };
+      if(cancelBtn) cancelBtn.onclick = cancelHandler;
+      if(closeBtn) closeBtn.onclick = cancelHandler;
+      overlay.classList.remove('hidden');
+      return;
+    }
+    // fallback: use the existing booking modal for editing when overlay not appropriate
+    if(!modal) return;
     const form = document.getElementById('bookingModalForm');
     form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
