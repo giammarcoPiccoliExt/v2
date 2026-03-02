@@ -92,30 +92,30 @@ export function initSummary(){
           if(b.deleted) d.style.opacity = '0.9';
           d.style.padding = '10px'; d.style.marginBottom = '8px'; d.style.borderRadius = '6px'; d.style.display = 'flex'; d.style.alignItems = 'flex-start'; d.style.gap = '12px';
 
-          // left: car card mini (color swatch + name)
-          const left = document.createElement('div'); left.className = 'summary-car'; left.style.minWidth='120px'; left.style.maxWidth='160px'; left.style.flex='0 0 140px'; left.style.display='flex'; left.style.alignItems='center'; left.style.gap='8px';
-          const sw = document.createElement('div'); sw.className='swatch'; sw.style.width='36px'; sw.style.height='36px'; sw.style.borderRadius='6px'; sw.style.flex='0 0 36px'; sw.style.boxShadow='inset 0 0 0 2px rgba(0,0,0,0.03)'; if(carObj.color) sw.style.background = carObj.color; else sw.style.background='#ddd';
+          // left: car card (name + plate) and creator underneath
+          const left = document.createElement('div'); left.className = 'summary-car'; left.style.minWidth='120px'; left.style.maxWidth='220px'; left.style.flex='0 0 180px'; left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='6px';
           const carInfo = document.createElement('div'); carInfo.style.display='flex'; carInfo.style.flexDirection='column';
-          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.name || 'Auto'; carNameEl.style.fontWeight='700';
+          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.name || 'Auto'; carNameEl.style.fontWeight='700'; carNameEl.style.fontSize='1em';
           const plateEl = document.createElement('div'); plateEl.textContent = plate; plateEl.style.fontSize='0.85em'; plateEl.style.color='#666';
           carInfo.appendChild(carNameEl); carInfo.appendChild(plateEl);
-          left.appendChild(sw); left.appendChild(carInfo);
+          left.appendChild(carInfo);
+          const creatorUnder = document.createElement('div'); creatorUnder.style.fontSize='0.9em'; creatorUnder.style.color='#444'; creatorUnder.style.marginTop='6px'; creatorUnder.textContent = b.creator_name ? ('Creato da: ' + b.creator_name) : '';
+          left.appendChild(creatorUnder);
 
           // right: main content
           const right = document.createElement('div'); right.style.flex='1'; right.style.display='flex'; right.style.flexDirection='column';
-          // top row: client (big) and dates
-          const top = document.createElement('div'); top.style.display='flex'; top.style.justifyContent='space-between'; top.style.alignItems='flex-start';
-          const clientName = document.createElement('div'); clientName.textContent = b.client_name || b.title || 'Cliente'; clientName.style.fontSize='1.05em'; clientName.style.fontWeight='700';
-          const dates = document.createElement('div'); dates.innerHTML = `<div style="font-size:0.9em;color:#333">${startLabel} → ${endLabel}</div>`;
+          // top area: client name above dates (two lines)
+          const top = document.createElement('div'); top.style.display='flex'; top.style.flexDirection='column'; top.style.alignItems='flex-start';
+          const clientName = document.createElement('div'); clientName.textContent = b.client_name || b.title || 'Cliente'; clientName.style.fontSize='1.05em'; clientName.style.fontWeight='700'; clientName.style.marginBottom='4px';
+          const dates = document.createElement('div'); dates.innerHTML = `<div style="font-size:0.95em;color:#333">${startLabel}<br>${endLabel}</div>`;
           top.appendChild(clientName); top.appendChild(dates);
 
-          // bottom row: created by and status
-          const bottom = document.createElement('div'); bottom.style.display='flex'; bottom.style.justifyContent='space-between'; bottom.style.alignItems='center'; bottom.style.marginTop='8px';
-          const creator = document.createElement('div'); creator.textContent = b.creator_name ? ('Creato da: ' + b.creator_name) : ''; creator.style.fontSize='0.9em'; creator.style.color='#444';
+          // bottom area: status on the right
+          const bottom = document.createElement('div'); bottom.style.display='flex'; bottom.style.justifyContent='flex-end'; bottom.style.alignItems='center'; bottom.style.marginTop='8px';
           const status = document.createElement('div'); status.textContent = statusLabel; status.style.fontWeight='700'; status.style.color = statusColor || '#000';
-          bottom.appendChild(creator); bottom.appendChild(status);
+          bottom.appendChild(status);
 
-          // optional description below (small)
+          // optional description below top area
           if(b.description){ const desc = document.createElement('div'); desc.textContent = b.description; desc.style.marginTop='8px'; desc.style.color='#333'; desc.style.fontSize='0.95em'; right.appendChild(top); right.appendChild(desc); right.appendChild(bottom); }
           else { right.appendChild(top); right.appendChild(bottom); }
 
