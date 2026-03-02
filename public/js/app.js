@@ -42,6 +42,8 @@ function initNav(){
     el.classList.add('active');
     const t = el.dataset.target;
     pages.forEach(p=>p.classList.toggle('active', p.id===t));
+    // notify other modules that page changed
+    window.dispatchEvent(new CustomEvent('page:changed', { detail: t }));
     // if user clicked 'home', reload the page to ensure fresh data
     if(t === 'home'){
       try{ location.reload(); }catch(e){}

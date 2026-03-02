@@ -215,6 +215,20 @@ header {
   justify-content: center;
   z-index: 100000;
 }
+
+/* banner shown when a user's booking was deleted */
+.deletion-banner {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  padding: 8px 12px;
+  margin: 8px 12px;
+  border-radius: 6px;
+  z-index: 9999;
+}
 .modal-content {
   background: #fff;
   padding: 12px;
