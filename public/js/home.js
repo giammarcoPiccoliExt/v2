@@ -394,7 +394,7 @@ export async function initHome(){
                       // reset UI: keep controls hidden until user clicks buttons
                       carArea.classList.add('hidden'); dateArea.classList.add('hidden');
                       // ensure modal sits above the booking modal (force high z-index & fixed positioning)
-                      try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '20000'; }catch(e){}
+                      try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '200001'; }catch(e){}
                       // cache current booking modal values for later prefill
                       let bmCarVal = null;
                       try{ const bmSel = document.querySelector('#bookingModal select[name="car_id"]'); if(bmSel && bmSel.value) bmCarVal = bmSel.value; }catch(e){}
