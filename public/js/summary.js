@@ -53,23 +53,30 @@ export function initSummary(){
       // container for list
       const list = document.createElement('div'); list.className='summary-list';
 
+      // helper to convert hex color to rgba with given alpha
+      function hexToRgba(hex, alpha){
+        if(!hex) return null;
+        // normalize
+        hex = String(hex).replace('#','').trim();
+        if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+        const int = parseInt(hex,16);
+        if(isNaN(int)) return null;
+        const r = (int>>16)&255, g = (int>>8)&255, b = int&255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
       function renderList(items){
         list.innerHTML = '';
         const todayIso = localISO(new Date());
         items.forEach(b=>{
-          const d = document.createElement('div'); d.className='card';
-          if(b.deleted) d.style.opacity = '0.85';
-          const title = b.title || b.client_name || 'Prenotazione';
           const carObj = carMap.get(b.car_id) || {};
-          const carName = carObj.name || '';
-          const carLine = carName ? (carName + (b.client_name ? (' - ' + b.client_name) : '')) : (b.client_name || title);
           const plate = carObj.plate || '';
           const startIso = (b.start_iso||'').slice(0,10);
           const endIso = (b.end_iso||'').slice(0,10);
           const startLabel = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : '';
           const endLabel = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : '';
 
-          // status: deleted overrides others
+          // determine status and color
           let statusLabel = '';
           let statusColor = '';
           if(b.deleted){ statusLabel = 'Eliminata'; statusColor = '#900'; }
@@ -79,9 +86,40 @@ export function initSummary(){
             else if(startIso > todayIso){ statusLabel = 'Futuro'; statusColor = '#0a66ff'; }
           }
 
-          const creator = b.creator_name ? ('Creato da: ' + b.creator_name) : '';
-          const statusHtml = statusLabel ? (` <span class="status-badge" style="color:${statusColor}; font-weight:600; margin-left:8px">(${statusLabel})</span>`) : '';
-          d.innerHTML = `<div class="card-row"><div class="card-meta"><div class="title">${carLine}</div><div class="car-plate">${plate}</div><div class="dates">${startLabel} → ${endLabel}${statusHtml}</div><div class="creator">${creator}</div></div><div class="card-actions"></div></div><div class="card-desc">${b.description||''}</div>`;
+          // outer card (rectangle) uses translucent statusColor as background
+          const d = document.createElement('div'); d.className = 'summary-rect';
+          if(statusColor){ const bg = hexToRgba(statusColor, 0.12) || hexToRgba(statusColor.replace('#',''),0.12); if(bg) d.style.background = bg; }
+          if(b.deleted) d.style.opacity = '0.9';
+          d.style.padding = '10px'; d.style.marginBottom = '8px'; d.style.borderRadius = '6px'; d.style.display = 'flex'; d.style.alignItems = 'flex-start'; d.style.gap = '12px';
+
+          // left: car card mini (color swatch + name)
+          const left = document.createElement('div'); left.className = 'summary-car'; left.style.minWidth='120px'; left.style.maxWidth='160px'; left.style.flex='0 0 140px'; left.style.display='flex'; left.style.alignItems='center'; left.style.gap='8px';
+          const sw = document.createElement('div'); sw.className='swatch'; sw.style.width='36px'; sw.style.height='36px'; sw.style.borderRadius='6px'; sw.style.flex='0 0 36px'; sw.style.boxShadow='inset 0 0 0 2px rgba(0,0,0,0.03)'; if(carObj.color) sw.style.background = carObj.color; else sw.style.background='#ddd';
+          const carInfo = document.createElement('div'); carInfo.style.display='flex'; carInfo.style.flexDirection='column';
+          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.name || 'Auto'; carNameEl.style.fontWeight='700';
+          const plateEl = document.createElement('div'); plateEl.textContent = plate; plateEl.style.fontSize='0.85em'; plateEl.style.color='#666';
+          carInfo.appendChild(carNameEl); carInfo.appendChild(plateEl);
+          left.appendChild(sw); left.appendChild(carInfo);
+
+          // right: main content
+          const right = document.createElement('div'); right.style.flex='1'; right.style.display='flex'; right.style.flexDirection='column';
+          // top row: client (big) and dates
+          const top = document.createElement('div'); top.style.display='flex'; top.style.justifyContent='space-between'; top.style.alignItems='flex-start';
+          const clientName = document.createElement('div'); clientName.textContent = b.client_name || b.title || 'Cliente'; clientName.style.fontSize='1.05em'; clientName.style.fontWeight='700';
+          const dates = document.createElement('div'); dates.innerHTML = `<div style="font-size:0.9em;color:#333">${startLabel} → ${endLabel}</div>`;
+          top.appendChild(clientName); top.appendChild(dates);
+
+          // bottom row: created by and status
+          const bottom = document.createElement('div'); bottom.style.display='flex'; bottom.style.justifyContent='space-between'; bottom.style.alignItems='center'; bottom.style.marginTop='8px';
+          const creator = document.createElement('div'); creator.textContent = b.creator_name ? ('Creato da: ' + b.creator_name) : ''; creator.style.fontSize='0.9em'; creator.style.color='#444';
+          const status = document.createElement('div'); status.textContent = statusLabel; status.style.fontWeight='700'; status.style.color = statusColor || '#000';
+          bottom.appendChild(creator); bottom.appendChild(status);
+
+          // optional description below (small)
+          if(b.description){ const desc = document.createElement('div'); desc.textContent = b.description; desc.style.marginTop='8px'; desc.style.color='#333'; desc.style.fontSize='0.95em'; right.appendChild(top); right.appendChild(desc); right.appendChild(bottom); }
+          else { right.appendChild(top); right.appendChild(bottom); }
+
+          d.appendChild(left); d.appendChild(right);
           list.appendChild(d);
         });
       }
