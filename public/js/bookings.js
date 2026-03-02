@@ -133,6 +133,21 @@ export function initBookings(){
         wrapper.scrollTop = scrollTo;
       }
     }catch(e){}
+    // if another module requested to open editor for a booking, handle it now
+    try{
+      const pending = localStorage.getItem('open_edit_booking_id');
+      if(pending){
+        localStorage.removeItem('open_edit_booking_id');
+        const bid = parseInt(pending, 10);
+        if(!isNaN(bid)){
+          const bk = bookings.find(b=>b.id === bid);
+          if(bk){
+            // open edit modal for this booking (openEditBooking is declared below and hoisted)
+            openEditBooking(bk, cars);
+          }
+        }
+      }
+    }catch(e){}
   }
 
   newBookingBtn?.addEventListener('click', ()=>{

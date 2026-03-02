@@ -358,7 +358,16 @@ export async function initHome(){
                     checkOverlap();
                   }catch(e){ alert('Errore durante eliminazione'); }
                 });
-                row.appendChild(txt); row.appendChild(del); warning.appendChild(row);
+                const edit = document.createElement('button'); edit.type='button'; edit.className='page-btn edit small'; edit.textContent = 'Modifica';
+                edit.addEventListener('click', ()=>{
+                  try{ localStorage.setItem('open_edit_booking_id', String(r.id)); }catch(e){}
+                  // hide booking modal and navigate to bookings page
+                  try{ document.getElementById('bookingModal')?.classList.add('hidden'); }catch(e){}
+                  const nav = document.querySelector('.nav-item[data-target="bookings"]');
+                  if(nav) nav.click(); else try{ location.href = '/'; }catch(e){}
+                });
+                const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.appendChild(edit); actions.appendChild(del);
+                row.appendChild(txt); row.appendChild(actions); warning.appendChild(row);
               });
               warning.classList.remove('hidden');
             } else {
@@ -403,13 +412,12 @@ export async function initHome(){
       const chkBody = { car_id, start_iso, end_iso };
       if(excludeId) chkBody.exclude_id = excludeId;
       const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
-      const force = !!body.force_booking;
-      if(chk.overlap && !force){
+      if(chk.overlap){
         // show detailed overlapping bookings in the warning area so user can delete the specific one
         checkOverlap();
         return;
       }
-      const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null, force: force };
+      const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
       const res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
       if(res.status===409) { alert('Conflitto'); return; }
       if(res.status===403) { alert('Non autorizzato (passcode richiesto)'); return; }
