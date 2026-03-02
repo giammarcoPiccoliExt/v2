@@ -520,7 +520,6 @@ export async function initHome(){
       }
       const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
       const res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
-      if(res.status===409) { alert('Conflitto'); return; }
       if(res.status===403) { alert('Non autorizzato (passcode richiesto)'); return; }
       if(!res.ok) { alert('Salvataggio fallito'); return; }
       document.getElementById('bookingModal').classList.add('hidden');
