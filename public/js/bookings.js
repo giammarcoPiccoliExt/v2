@@ -163,6 +163,10 @@ export function initBookings(){
         if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
         if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
 
+          // ensure modal title and client input are set for NEW booking
+          const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = 'Nuova Prenotazione';
+          const clientInputNew = modal.querySelector('input[name="client_name"]'); if(clientInputNew){ clientInputNew.placeholder = 'Cliente'; clientInputNew.value = ''; }
+
         async function checkOverlapLocal(){
           if(!select || !startInput || !endInput) return;
           const carId = select.value; const s = startInput.value; const e = endInput.value; if(!carId || !s || !e) return;
@@ -268,6 +272,9 @@ export function initBookings(){
     if(modal && !modal.classList.contains('hidden')){
       const overlay = document.getElementById('editOverlayModal'); if(!overlay) return;
       const form = document.getElementById('editOverlayForm');
+      // populate client at top
+      const clientInputOverlay = form.querySelector('input[name="client_name"]'); if(clientInputOverlay){ clientInputOverlay.value = bk.client_name || ''; clientInputOverlay.placeholder = 'Cliente'; }
+      const overlayTitleEl = document.getElementById('editOverlayTitle'); if(overlayTitleEl) overlayTitleEl.textContent = bk.client_name || 'Cliente';
       form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
       form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
       const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
@@ -294,6 +301,8 @@ export function initBookings(){
     // fallback: use the existing booking modal for editing when overlay not appropriate
     if(!modal) return;
     const form = document.getElementById('bookingModalForm');
+    // set booking modal title to client name (not "Nuova Prenotazione")
+    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = bk.client_name || 'Cliente';
     form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
     const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
