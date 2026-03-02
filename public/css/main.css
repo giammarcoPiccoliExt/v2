@@ -316,6 +316,10 @@ header {
   flex-direction: column;
   gap: 6px;
 }
+/* Ensure .field.hidden inside modals is truly hidden (higher specificity) */
+.modal .modal-content .field.hidden {
+  display: none;
+}
 .modal .modal-content label {
   font-size: 13px;
   color: #333;
