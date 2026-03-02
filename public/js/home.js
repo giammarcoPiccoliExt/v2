@@ -431,7 +431,21 @@ export async function initHome(){
                             if(res.status === 409){ alert('Conflitto con altre prenotazioni.'); return; }
                             if(!res.ok){ const j = await res.json().catch(()=>({})); alert('Errore: '+(j.error||res.status)); return; }
                             // success: close modal and refresh calendar
-                            changeModal.classList.add('hidden'); cleanup(); await refresh(); return;
+                            changeModal.classList.add('hidden'); cleanup();
+                            await refresh();
+                            // if the booking creation modal is still open, re-trigger its change handlers
+                            try{
+                              const bm = document.getElementById('bookingModal');
+                              if(bm && !bm.classList.contains('hidden')){
+                                const sel = bm.querySelector('select[name="car_id"]');
+                                const sIn = bm.querySelector('input[name="start_date"]');
+                                const eIn = bm.querySelector('input[name="end_date"]');
+                                if(sel) sel.dispatchEvent(new Event('change'));
+                                if(sIn) sIn.dispatchEvent(new Event('change'));
+                                if(eIn) eIn.dispatchEvent(new Event('change'));
+                              }
+                            }catch(e){}
+                            return;
                           }
                           // fallback: nothing to do
                         }catch(e){ console.error(e); }
