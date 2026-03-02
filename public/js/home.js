@@ -425,14 +425,22 @@ export async function initHome(){
                         try{
                           // If we have a target existing booking, apply changes to that booking via PUT
                           if(targetBooking){
+                            // build payload including existing values for mandatory fields
                             const payload = {};
-                            if(!carArea.classList.contains('hidden')){ payload.car_id = parseInt(carSelect.value); }
-                            if(!dateArea.classList.contains('hidden')){
-                              const s = startInputCR.value; const e = endInputCR.value;
-                              if(!s || !e){ alert('Inserisci data inizio e data fine.'); return; }
-                              payload.start_iso = s + 'T00:00:00Z'; payload.end_iso = e + 'T23:59:59Z';
-                            }
-                            if(Object.keys(payload).length === 0){ return; }
+                            // car: if user changed car, use new one, otherwise keep existing
+                            try{ payload.car_id = !carArea.classList.contains('hidden') ? parseInt(carSelect.value) : parseInt(targetBooking.car_id); }catch(e){ payload.car_id = parseInt(targetBooking.car_id); }
+                            // dates: if user changed dates, use them; otherwise keep existing
+                            try{
+                              if(!dateArea.classList.contains('hidden')){
+                                const s = startInputCR.value; const e = endInputCR.value;
+                                if(!s || !e){ alert('Inserisci data inizio e data fine.'); return; }
+                                payload.start_iso = s + 'T00:00:00Z'; payload.end_iso = e + 'T23:59:59Z';
+                              } else {
+                                // preserve existing mandatory dates to avoid NOT NULL constraint
+                                payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso;
+                              }
+                            }catch(e){ payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso; }
+                            if(!payload.car_id){ alert('Seleziona un\'auto valida.'); return; }
                             const res = await fetchRaw(`/api/bookings/${targetBooking.id}`, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
                             if(res.status === 403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
                             if(res.status === 409){ alert('Conflitto con altre prenotazioni.'); return; }
