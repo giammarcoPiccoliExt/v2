@@ -395,10 +395,11 @@ export async function initHome(){
                       carArea.classList.add('hidden'); dateArea.classList.add('hidden');
                       // ensure modal sits above the booking modal (force high z-index & fixed positioning)
                       try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '200001'; }catch(e){}
-                      // cache current booking modal values for later prefill
-                      let bmCarVal = null;
-                      try{ const bmSel = document.querySelector('#bookingModal select[name="car_id"]'); if(bmSel && bmSel.value) bmCarVal = bmSel.value; }catch(e){}
-                      try{ const bmStart = document.querySelector('#bookingModal input[name="start_date"]'); const bmEnd = document.querySelector('#bookingModal input[name="end_date"]'); if(bmStart) startInputCR.value = bmStart.value || bmStart.placeholder || ''; if(bmEnd) endInputCR.value = bmEnd.value || bmEnd.placeholder || ''; }catch(e){}
+                      // target the existing booking (r) — we will edit that booking on submit
+                      const targetBooking = r;
+                      // prefill controls from the existing booking values
+                      let bmCarVal = targetBooking && targetBooking.car_id ? String(targetBooking.car_id) : null;
+                      try{ if(targetBooking && targetBooking.start_iso) startInputCR.value = (targetBooking.start_iso||'').slice(0,10); if(targetBooking && targetBooking.end_iso) endInputCR.value = (targetBooking.end_iso||'').slice(0,10); }catch(e){}
                       // set button handlers: fetch cars lazily only when Car button clicked
                       const showCar = async ()=>{
                         try{
@@ -419,20 +420,28 @@ export async function initHome(){
                       };
                       btnCar.onclick = showCar; btnDate.onclick = showDate;
                       const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; try{ dateArea.style.display=''; dateArea.style.flexDirection=''; dateArea.style.alignItems=''; dateArea.style.gap=''; }catch(e){} };
-                      const onSubmit = (ev)=>{
+                      const onSubmit = async (ev)=>{
                         ev.preventDefault();
-                        // apply changes to bookingModal inputs
                         try{
-                          const bmStart = document.querySelector('#bookingModal input[name="start_date"]');
-                          const bmEnd = document.querySelector('#bookingModal input[name="end_date"]');
-                          const bmSel = document.querySelector('#bookingModal select[name="car_id"]');
-                          if(!bmStart || !bmEnd || !bmSel) return;
-                          // if car area visible, update car
-                          if(!carArea.classList.contains('hidden')){ bmSel.value = carSelect.value; bmSel.dispatchEvent(new Event('change')); }
-                          // if date area visible, update dates
-                          if(!dateArea.classList.contains('hidden')){ bmStart.value = startInputCR.value; bmEnd.value = endInputCR.value; bmStart.dispatchEvent(new Event('change')); bmEnd.dispatchEvent(new Event('change')); }
-                        }catch(e){}
-                        // close change modal
+                          // If we have a target existing booking, apply changes to that booking via PUT
+                          if(targetBooking){
+                            const payload = {};
+                            if(!carArea.classList.contains('hidden')){ payload.car_id = parseInt(carSelect.value); }
+                            if(!dateArea.classList.contains('hidden')){
+                              const s = startInputCR.value; const e = endInputCR.value;
+                              if(!s || !e){ alert('Inserisci data inizio e data fine.'); return; }
+                              payload.start_iso = s + 'T00:00:00Z'; payload.end_iso = e + 'T23:59:59Z';
+                            }
+                            if(Object.keys(payload).length === 0){ return; }
+                            const res = await fetchRaw(`/api/bookings/${targetBooking.id}`, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
+                            if(res.status === 403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
+                            if(res.status === 409){ alert('Conflitto con altre prenotazioni.'); return; }
+                            if(!res.ok){ const j = await res.json().catch(()=>({})); alert('Errore: '+(j.error||res.status)); return; }
+                            // success: close modal and refresh calendar
+                            changeModal.classList.add('hidden'); cleanup(); await refresh(); return;
+                          }
+                          // fallback: nothing to do
+                        }catch(e){ console.error(e); }
                         changeModal.classList.add('hidden'); cleanup();
                       };
                       form.addEventListener('submit', onSubmit);
