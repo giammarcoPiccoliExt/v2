@@ -10,6 +10,9 @@ export function initBookings(){
   function getSavedFilter(){ return localStorage.getItem(FILTER_KEY) || 'all'; }
   function saveFilter(v){ localStorage.setItem(FILTER_KEY, v); }
   let sizeFilter = getSavedFilter();
+  // cache latest fetched cars/bookings for external requests
+  let lastCars = [];
+  let lastBookings = [];
   // filter button: prefer the sidebar placement if available
   let filterBtn = document.getElementById('filterSizeBtn');
   if(!filterBtn){
@@ -59,7 +62,12 @@ export function initBookings(){
     months.forEach(monthStart=>{
       const monthWrap = document.createElement('div'); monthWrap.className = 'month-wrap';
       const title = document.createElement('div'); title.className = 'month-title'; title.textContent = monthStart.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-      monthWrap.appendChild(title);
+
+      // header with caret to toggle accordion
+      const header = document.createElement('div'); header.className = 'month-header'; header.style.cursor = 'pointer'; header.style.display = 'flex'; header.style.justifyContent = 'space-between'; header.style.alignItems = 'center';
+      header.appendChild(title);
+      const caret = document.createElement('div'); caret.className = 'month-caret'; caret.textContent = '▾'; caret.style.marginLeft = '8px'; header.appendChild(caret);
+      monthWrap.appendChild(header);
 
       const grid = document.createElement('div'); grid.className = 'month-grid';
       // week day headers (Italian)
@@ -112,6 +120,13 @@ export function initBookings(){
 
       monthWrap.appendChild(grid);
       monthView.appendChild(monthWrap);
+
+      // toggle behavior for accordion
+      header.addEventListener('click', ()=>{
+        const isHidden = grid.style.display === 'none';
+        if(isHidden){ grid.style.display = ''; caret.textContent = '▾'; }
+        else { grid.style.display = 'none'; caret.textContent = '▸'; }
+      });
     });
     // after rendering months, scroll calendar-wrapper to current month
     try{
@@ -135,6 +150,33 @@ export function initBookings(){
         wrapper.scrollTop = scrollTo;
       }
     }catch(e){}
+    // helper to expand only current and next month when viewing bookings
+    function expandOnlyCurrentAndNextMonths(){
+      try{
+        const wraps = Array.from(monthView.querySelectorAll('.month-wrap'));
+        const today = new Date();
+        const next = new Date(today.getFullYear(), today.getMonth()+1, 1);
+        wraps.forEach(mw=>{
+          const title = mw.querySelector('.month-title');
+          const grid = mw.querySelector('.month-grid');
+          const caret = mw.querySelector('.month-caret');
+          if(!title || !grid) return;
+          const parts = title.textContent.trim().split(' ');
+          const monthName = parts[0];
+          const year = parts[parts.length-1];
+          const dt = new Date(`${monthName} 1, ${year}`);
+          const isCurrent = dt.getMonth() === today.getMonth() && dt.getFullYear() === today.getFullYear();
+          const isNext = dt.getMonth() === next.getMonth() && dt.getFullYear() === next.getFullYear();
+          if(isCurrent || isNext){ grid.style.display = ''; if(caret) caret.textContent = '▾'; }
+          else { grid.style.display = 'none'; if(caret) caret.textContent = '▸'; }
+        });
+      }catch(e){}
+    }
+
+    // if the bookings page is active now, apply accordion collapse/expand
+    try{ const bookingsPage = document.getElementById('bookings'); if(bookingsPage && bookingsPage.classList.contains('active')) expandOnlyCurrentAndNextMonths(); }catch(e){}
+    // apply when navigating to bookings page
+    window.addEventListener('page:changed', (ev)=>{ try{ if(ev.detail === 'bookings'){ expandOnlyCurrentAndNextMonths(); } }catch(e){} });
     // if another module requested to open editor for a booking, handle it now
     try{
       const pending = localStorage.getItem('open_edit_booking_id');
@@ -152,9 +194,7 @@ export function initBookings(){
     }catch(e){}
   }
 
-  // keep latest cars/bookings for external open requests
-  let lastCars = [];
-  let lastBookings = [];
+  // keep latest cars/bookings for external open requests (declared earlier)
 
   // listen for global requests to open an edit modal for a booking id
   window.addEventListener('openEditBooking', (ev)=>{
