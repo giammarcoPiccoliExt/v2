@@ -411,9 +411,14 @@ export async function initHome(){
                         }catch(e){}
                         carArea.classList.remove('hidden'); dateArea.classList.add('hidden');
                       };
-                      const showDate = ()=>{ dateArea.classList.remove('hidden'); carArea.classList.add('hidden'); };
+                      const showDate = ()=>{
+                        dateArea.classList.remove('hidden');
+                        carArea.classList.add('hidden');
+                        // make the date area layout horizontal when visible
+                        try{ dateArea.style.display = 'flex'; dateArea.style.flexDirection = 'row'; dateArea.style.alignItems = 'center'; dateArea.style.gap = '8px'; }catch(e){}
+                      };
                       btnCar.onclick = showCar; btnDate.onclick = showDate;
-                      const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; };
+                      const cleanup = ()=>{ form.removeEventListener('submit', onSubmit); closeBtn.onclick = null; cancelBtn.onclick = null; btnCar.onclick = null; btnDate.onclick = null; try{ dateArea.style.display=''; dateArea.style.flexDirection=''; dateArea.style.alignItems=''; dateArea.style.gap=''; }catch(e){} };
                       const onSubmit = (ev)=>{
                         ev.preventDefault();
                         // apply changes to bookingModal inputs
