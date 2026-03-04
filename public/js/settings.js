@@ -56,22 +56,29 @@ export async function initSettings(){
       modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
-        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, insurance_expiry_iso: (ins && ins.value) ? ins.value : null };
-        // require name, plate and size only (price optional, color may duplicate)
-        const nameNorm = (body.name||'').trim();
+        const body = {
+          modello: (modello.value||'').trim(),
+          descrizione: (descrizione.value||'').trim(),
+          color: color.value,
+          plate: (plate.value||'').toUpperCase(),
+          size: size.value,
+          insurance_expiry_iso: (ins && ins.value) ? ins.value : null
+        };
+        // require modello, plate e size
+        const modelloNorm = (body.modello||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
-        if(!nameNorm || !plateNorm || !body.size){
-          alert('Compila i campi obbligatori: nome, targa e dimensione.');
+        if(!modelloNorm || !plateNorm || !body.size){
+          alert('Compila i campi obbligatori: modello, targa e dimensione.');
           return;
         }
-        // client-side duplicate check (exclude current id)
+        // client-side duplicate check SOLO su targa (escludi questa auto)
         try{
           const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => (x.id != id) && ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
-          if(conflict){ alert('Errore: Nome o targa già esistente per un\'altra auto.'); return; }
+          const conflict = existing.find(x => (x.id != id) && plateNorm && ((x.plate||'').toUpperCase() === plateNorm));
+          if(conflict){ alert('Errore: Targa già esistente per un'altra auto.'); return; }
         }catch(e){ /* ignore and continue to server validation */ }
         const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
+        if(res.status===409){ alert('Errore: Targa già esistente.'); return; }
         if(!res.ok){ alert('Aggiornamento fallito'); return; }
         modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
