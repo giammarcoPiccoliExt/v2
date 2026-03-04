@@ -40,6 +40,9 @@ echo "Using DB: $DB_PATH"
 # If table exists, delete all existing rows to start fresh
 
 
+
+# Rimuovi eventuale indice unico su modello
+sqlite3 "$DB_PATH" "DROP INDEX IF EXISTS idx_cars_modello;"
 # Ricrea la tabella cars con la nuova struttura
 sqlite3 "$DB_PATH" "DROP TABLE IF EXISTS cars;"
 sqlite3 "$DB_PATH" "CREATE TABLE IF NOT EXISTS cars (
@@ -52,7 +55,6 @@ sqlite3 "$DB_PATH" "CREATE TABLE IF NOT EXISTS cars (
   plate TEXT,
   insurance_expiry_iso TEXT
 );"
-## L'unicità ora è solo sulla targa
 sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);"
 
 
