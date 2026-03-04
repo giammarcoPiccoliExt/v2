@@ -12,10 +12,13 @@ export async function initSettings(){
         const el = document.createElement('div'); el.className='car-card';
         const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
         const info = document.createElement('div'); info.className = 'car-info';
-        const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
+        // Modello e descrizione sulla stessa riga
+        const modelDesc = document.createElement('div');
+        modelDesc.innerHTML = `<strong>${c.modello || ''}</strong> <span style='font-weight:normal;'>${c.descrizione || ''}</span>`;
+        info.appendChild(modelDesc);
         const plateEl = document.createElement('div'); plateEl.textContent = c.plate || '';
         const insEl = document.createElement('div'); insEl.className = 'car-meta'; insEl.textContent = c.insurance_expiry_iso ? ('Assicurazione: ' + c.insurance_expiry_iso) : '';
-        info.appendChild(nameEl); info.appendChild(plateEl); info.appendChild(insEl);
+        info.appendChild(plateEl); info.appendChild(insEl);
         const actions = document.createElement('div'); actions.className = 'car-actions';
         const editBtn = document.createElement('button'); editBtn.className = 'page-btn edit'; editBtn.dataset.id = c.id; editBtn.textContent = 'Modifica';
         const delBtn = document.createElement('button'); delBtn.className = 'page-btn del'; delBtn.dataset.id = c.id; delBtn.textContent = 'Elimina';
@@ -97,21 +100,21 @@ export async function initSettings(){
         // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
         if(body.insurance_expiry_iso === '') body.insurance_expiry_iso = null;
-        // require name, plate and size only; price optional, color may duplicate
-        const nameNorm = (body.name||'').trim();
+        // require modello, plate e size
+        const modelloNorm = (body.modello||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
-        if(!nameNorm || !plateNorm || !body.size){
-          alert('Compila i campi obbligatori: nome, targa e dimensione.');
+        if(!modelloNorm || !plateNorm || !body.size){
+          alert('Compila i campi obbligatori: modello, targa e dimensione.');
           return;
         }
-        // client-side duplicate check
+        // client-side duplicate check SOLO su targa
         try{
           const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
-          if(conflict){ alert('Errore: Nome o targa già esistente.'); return; }
+          const conflict = existing.find(x => plateNorm && ((x.plate||'').toUpperCase() === plateNorm));
+          if(conflict){ alert('Errore: Targa già esistente.'); return; }
         }catch(e){ /* ignore and rely on server */ }
         const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
+        if(res.status===409){ alert('Errore: Targa già esistente.'); return; }
         if(!res.ok){ alert('Salvataggio fallito'); return; }
         modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
