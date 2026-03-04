@@ -684,6 +684,15 @@ header {
   color: #666;
   margin-top: 2px;
 }
+/* compact meta line used in car cards to show details + plate on one line */
+.car-info .meta-line {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
 /* header-placeholder: keep a sticky placeholder at top of machines column */
 .cars-col .header-placeholder {
   position: sticky;

@@ -47,8 +47,12 @@ export function initBookings(){
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
       const nameEl = document.createElement('strong'); nameEl.textContent = c.model || c.name || '';
-      const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = c.plate || '';
-      info.appendChild(nameEl); info.appendChild(plateEl);
+      const meta = document.createElement('div'); meta.className = 'meta-line';
+      const parts = [];
+      if(c.details) parts.push(c.details);
+      if(c.plate) parts.push(c.plate);
+      meta.textContent = parts.join(' · ');
+      info.appendChild(nameEl); info.appendChild(meta);
       el.appendChild(sw); el.appendChild(info);
       legend.appendChild(el);
     });

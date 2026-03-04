@@ -112,8 +112,12 @@ export async function initHome(){
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(car.color) sw.style.background = car.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
       const nameEl = document.createElement('strong'); nameEl.textContent = car.model || car.name || '';
-      const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = car.plate || '';
-      info.appendChild(nameEl); info.appendChild(plateEl);
+      const meta = document.createElement('div'); meta.className = 'meta-line';
+      const parts = [];
+      if(car.details) parts.push(car.details);
+      if(car.plate) parts.push(car.plate);
+      meta.textContent = parts.join(' · ');
+      info.appendChild(nameEl); info.appendChild(meta);
       card.appendChild(sw); card.appendChild(info);
       carsCol.appendChild(card);
 
