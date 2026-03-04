@@ -74,8 +74,40 @@ else
     sqlite3 "$DB_PATH" "DELETE FROM cars;"
     # reset AUTOINCREMENT counter if sqlite_sequence present
     sqlite3 "$DB_PATH" "DELETE FROM sqlite_sequence WHERE name='cars';" 2>/dev/null || true
+    # ensure schema has expected columns (model, details, insurance_expiry_iso)
+    cols=$(sqlite3 "$DB_PATH" "PRAGMA table_info(cars);" 2>/dev/null || true)
+    if ! echo "$cols" | grep -q "model"; then
+      echo "Adding missing column: model"
+      sqlite3 "$DB_PATH" "ALTER TABLE cars ADD COLUMN model TEXT;"
+    fi
+    if ! echo "$cols" | grep -q "details"; then
+      echo "Adding missing column: details"
+      sqlite3 "$DB_PATH" "ALTER TABLE cars ADD COLUMN details TEXT;"
+    fi
+    if ! echo "$cols" | grep -q "insurance_expiry_iso"; then
+      echo "Adding missing column: insurance_expiry_iso"
+      sqlite3 "$DB_PATH" "ALTER TABLE cars ADD COLUMN insurance_expiry_iso TEXT;"
+    fi
+    # ensure unique indexes exist
+    sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name);"
+    sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);"
   else
-    echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
+    echo "Table 'cars' not found in DB; creating table with expected schema..."
+    sqlite3 "$DB_PATH" <<'SQL'
+CREATE TABLE IF NOT EXISTS cars (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  model TEXT,
+  details TEXT,
+  color TEXT,
+  size TEXT,
+  price_per_day REAL,
+  plate TEXT,
+  insurance_expiry_iso TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);
+SQL
   fi
 fi
 
