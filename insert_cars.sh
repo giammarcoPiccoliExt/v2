@@ -19,15 +19,15 @@ colors=(
 entries=(
 "TIPO 1.6|FR 272 VV|media"
 "TIPO 1.3|FW 596 EC|media"
-"TIPO 1.6|Automatica|FZ 249 RM|media"
-"TOURAN|7 POSTI|ET 314 LJ|grande"
+"TIPO 1.6 Automatica|FZ 249 RM|media"
+"TOURAN 7 POSTI|ET 314 LJ|grande"
 "CORSA|FG 852 NP|piccola"
 "320D|ET 256 EY|media"
-"DUCATO|9 Posti|FE 694 YJ|grande"
-"TALENTO|9 posti|GC 053 MN|grande"
+"DUCATO 9 Posti|FE 694 YJ|grande"
+"TALENTO 9 posti|GC 053 MN|grande"
 "MEGANE|FF 379 ED|media"
-"DUCATO|LUNGO|FA 771 NY|grande"
-"DUCATO|CORTO|FS 078 TR|grande"
+"DUCATO LUNGO|FA 771 NY|grande"
+"DUCATO CORTO|FS 078 TR|grande"
 "TRANSIT|FG 631 ST|grande"
 "LANCIA Y|FB 241 VX|piccola"
 )
@@ -72,13 +72,10 @@ for e in "${entries[@]}"; do
     esc_plate=${plate//\'/\'\'}
     esc_color=${color//\'/\'\'}
     esc_size=${size//\'/\'\'}
-    # align with new DB schema: model and details columns
-    esc_model=${esc_name}
-    esc_details=''
 
-  sql="INSERT OR IGNORE INTO cars (name,model,details,color,size,plate,insurance_expiry_iso) VALUES ('$esc_name','$esc_model','$esc_details','$esc_color','$esc_size','$esc_plate','$INS_DATE');"
+  sql="INSERT OR IGNORE INTO cars (name, color, size, plate, insurance_expiry_iso) VALUES ('$esc_name', '$esc_color', '$esc_size', '$esc_plate', '$INS_DATE');"
   sqlite3 "$DB_PATH" "$sql"
-  echo "Inserted (or ignored if duplicate): $name / $plate / $size / $color / model='$esc_model' details='$esc_details' / $INS_DATE"
+  echo "Inserted (or ignored if duplicate): $name / $plate / $size / $color / $INS_DATE"
 done
 
 echo "Done. Verify inserted rows with: sqlite3 '$DB_PATH' 'SELECT id,name,plate,size,insurance_expiry_iso FROM cars ORDER BY id DESC LIMIT 20;'
