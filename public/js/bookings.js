@@ -46,7 +46,7 @@ export function initBookings(){
       const el = document.createElement('div'); el.className='car-card';
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
-      const nameEl = document.createElement('strong'); nameEl.textContent = c.model || c.name || '';
+      const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
       const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = c.plate || '';
       info.appendChild(nameEl); info.appendChild(plateEl);
       el.appendChild(sw); el.appendChild(info);
@@ -101,7 +101,7 @@ export function initBookings(){
             dayBookings.slice(0,4).forEach(bk=>{
               const car = cars.find(c=>c.id===bk.car_id);
               const dot = document.createElement('span'); dot.style.background = car?.color || '#999';
-              dot.title = (car? (car.model || car.name) : '') + (bk.client_name?(' - '+bk.client_name):(bk.title?(' - '+bk.title):''));
+              dot.title = (car?car.name:'') + (bk.client_name?(' - '+bk.client_name):(bk.title?(' - '+bk.title):''));
               dots.appendChild(dot);
             });
             cell.appendChild(dots);
@@ -294,7 +294,7 @@ export function initBookings(){
         const meta = document.createElement('div'); meta.className = 'card-meta';
         // title: "nome auto - cliente"
         const titleDiv = document.createElement('div'); titleDiv.className = 'title';
-        if(car){ titleDiv.textContent = (car.model || car.name) + (clientLabel ? (' - ' + clientLabel) : ''); }
+        if(car){ titleDiv.textContent = car.name + (clientLabel ? (' - ' + clientLabel) : ''); }
         else { titleDiv.textContent = clientLabel || '?'; }
         // plate/targa on its own line
         const plateDiv = document.createElement('div'); plateDiv.className = 'car-plate'; plateDiv.textContent = car ? (car.plate || car.targa || '') : '';
@@ -336,7 +336,7 @@ export function initBookings(){
       form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
       const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
       // populate car options
-      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.model || c.name || ''; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
       // submit handler for overlay
       const onSubmitOverlay = async (e)=>{
         e.preventDefault();
@@ -364,7 +364,7 @@ export function initBookings(){
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
     const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
     // populate car options
-    cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.model || c.name || ''; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+    cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
     form.querySelector('input[name="client_name"]').value = bk.client_name || '';
     form.querySelector('input[name="description"]').value = bk.description || '';
     // set submit handler to PUT

@@ -12,7 +12,7 @@ export async function initSettings(){
         const el = document.createElement('div'); el.className='car-card';
         const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
         const info = document.createElement('div'); info.className = 'car-info';
-        const nameEl = document.createElement('strong'); nameEl.textContent = c.model || c.name || '';
+        const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
         const plateEl = document.createElement('div'); plateEl.textContent = c.plate || '';
         const insEl = document.createElement('div'); insEl.className = 'car-meta'; insEl.textContent = c.insurance_expiry_iso ? ('Assicurazione: ' + c.insurance_expiry_iso) : '';
         info.appendChild(nameEl); info.appendChild(plateEl); info.appendChild(insEl);
@@ -37,8 +37,7 @@ export async function initSettings(){
     if(t.classList.contains('edit')){
       const id = t.dataset.id;
       const modal = document.getElementById('carModal'); if(!modal) return;
-      const name = modal.querySelector('input[name="model"]');
-      const details = modal.querySelector('input[name="details"]');
+      const name = modal.querySelector('input[name="name"]');
       const color = modal.querySelector('input[name="color"]');
       const plate = modal.querySelector('input[name="plate"]');
       const size = modal.querySelector('select[name="size"]');
@@ -46,30 +45,29 @@ export async function initSettings(){
       const res = await fetchJson(`/api/cars`);
       const car = res.find(x=>x.id==id);
       if(!car) return;
-      name.value = car.model || car.name || ''; details.value = car.details || '';
-      color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
+      name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
       if(ins) ins.value = car.insurance_expiry_iso ? car.insurance_expiry_iso.slice(0,10) : '';
       const form = modal.querySelector('form'); form.setAttribute('data-edit-id', id);
       renderSwatches(color.value || '#ffffff');
       modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
-        const body = { model: (name.value||'').trim(), details: (details.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, insurance_expiry_iso: (ins && ins.value) ? ins.value : null };
+        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, insurance_expiry_iso: (ins && ins.value) ? ins.value : null };
         // require name, plate and size only (price optional, color may duplicate)
-        const nameNorm = (body.model||'').trim();
+        const nameNorm = (body.name||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
         if(!nameNorm || !plateNorm || !body.size){
-          alert('Compila i campi obbligatori: modello, targa e dimensione.');
+          alert('Compila i campi obbligatori: nome, targa e dimensione.');
           return;
         }
         // client-side duplicate check (exclude current id)
         try{
           const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => (x.id != id) && ( ((x.name||x.model||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
-          if(conflict){ alert('Errore: Modello o targa già esistente per un\'altra auto.'); return; }
+          const conflict = existing.find(x => (x.id != id) && ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
+          if(conflict){ alert('Errore: Nome o targa già esistente per un\'altra auto.'); return; }
         }catch(e){ /* ignore and continue to server validation */ }
         const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-        if(res.status===409){ alert('Errore: Modello o targa già esistente.'); return; }
+        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
         if(!res.ok){ alert('Aggiornamento fallito'); return; }
         modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
@@ -84,8 +82,7 @@ export async function initSettings(){
       const modal = document.getElementById('carModal'); if(!modal) return;
       const form = modal.querySelector('form'); form.removeAttribute('data-edit-id');
       // reset fields
-      form.querySelector('input[name="model"]').value = '';
-      form.querySelector('input[name="details"]').value = '';
+      form.querySelector('input[name="name"]').value = '';
       form.querySelector('input[name="color"]').value = '';
       form.querySelector('input[name="plate"]').value = '';
     form.querySelector('input[name="insurance_expiry_iso"]').value = '';
@@ -98,21 +95,21 @@ export async function initSettings(){
         // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
         if(body.insurance_expiry_iso === '') body.insurance_expiry_iso = null;
-        // require model, plate and size only; price optional, color may duplicate
-        const nameNorm = (body.model||'').trim();
+        // require name, plate and size only; price optional, color may duplicate
+        const nameNorm = (body.name||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
         if(!nameNorm || !plateNorm || !body.size){
-          alert('Compila i campi obbligatori: modello, targa e dimensione.');
+          alert('Compila i campi obbligatori: nome, targa e dimensione.');
           return;
         }
         // client-side duplicate check
         try{
           const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => ( ((x.name||x.model||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
-          if(conflict){ alert('Errore: Modello o targa già esistente.'); return; }
+          const conflict = existing.find(x => ( ((x.name||'').trim().toLowerCase() === nameNorm.toLowerCase()) || (plateNorm && ((x.plate||'').toUpperCase() === plateNorm)) ));
+          if(conflict){ alert('Errore: Nome o targa già esistente.'); return; }
         }catch(e){ /* ignore and rely on server */ }
         const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-        if(res.status===409){ alert('Errore: Modello o targa già esistente.'); return; }
+        if(res.status===409){ alert('Errore: Nome o targa già esistente.'); return; }
         if(!res.ok){ alert('Salvataggio fallito'); return; }
         modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
