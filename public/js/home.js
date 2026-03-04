@@ -501,7 +501,12 @@ export async function initHome(){
                       try{
                         fetchCars().then(carsList=>{
                           carSelect.innerHTML = '';
-                          carsList.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
+                          carsList.forEach(c=>{
+                            let label = (c.modello || '');
+                            if(c.descrizione) label += ' - ' + c.descrizione;
+                            if(c.plate) label += ' / ' + c.plate;
+                            const o = document.createElement('option'); o.value = c.id; o.textContent = label; carSelect.appendChild(o);
+                          });
                           if(bmCarVal) try{ carSelect.value = bmCarVal; }catch(e){}
                         }).catch(()=>{});
                       }catch(e){}
