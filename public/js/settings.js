@@ -37,7 +37,8 @@ export async function initSettings(){
     if(t.classList.contains('edit')){
       const id = t.dataset.id;
       const modal = document.getElementById('carModal'); if(!modal) return;
-      const name = modal.querySelector('input[name="name"]');
+      const modello = modal.querySelector('input[name="modello"]');
+      const descrizione = modal.querySelector('input[name="descrizione"]');
       const color = modal.querySelector('input[name="color"]');
       const plate = modal.querySelector('input[name="plate"]');
       const size = modal.querySelector('select[name="size"]');
@@ -45,7 +46,7 @@ export async function initSettings(){
       const res = await fetchJson(`/api/cars`);
       const car = res.find(x=>x.id==id);
       if(!car) return;
-      name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
+      modello.value = car.modello||''; descrizione.value = car.descrizione||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
       if(ins) ins.value = car.insurance_expiry_iso ? car.insurance_expiry_iso.slice(0,10) : '';
       const form = modal.querySelector('form'); form.setAttribute('data-edit-id', id);
       renderSwatches(color.value || '#ffffff');
@@ -82,7 +83,8 @@ export async function initSettings(){
       const modal = document.getElementById('carModal'); if(!modal) return;
       const form = modal.querySelector('form'); form.removeAttribute('data-edit-id');
       // reset fields
-      form.querySelector('input[name="name"]').value = '';
+      form.querySelector('input[name="modello"]').value = '';
+      form.querySelector('input[name="descrizione"]').value = '';
       form.querySelector('input[name="color"]').value = '';
       form.querySelector('input[name="plate"]').value = '';
     form.querySelector('input[name="insurance_expiry_iso"]').value = '';

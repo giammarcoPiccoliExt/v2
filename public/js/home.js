@@ -111,9 +111,21 @@ export async function initHome(){
       const card = document.createElement('div'); card.className = 'car-card';
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(car.color) sw.style.background = car.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
-      const nameEl = document.createElement('strong'); nameEl.textContent = car.name;
+
+      // modello (bold)
+      const modelloEl = document.createElement('strong'); modelloEl.textContent = car.modello || '';
+      modelloEl.style.display = 'block';
+      info.appendChild(modelloEl);
+      // descrizione (normal)
+      const descrizioneEl = document.createElement('div'); descrizioneEl.textContent = car.descrizione || '';
+      descrizioneEl.style.fontWeight = 'normal';
+      descrizioneEl.style.display = 'block';
+      info.appendChild(descrizioneEl);
+      // targa (plate)
       const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = car.plate || '';
-      info.appendChild(nameEl); info.appendChild(plateEl);
+      plateEl.style.display = 'block';
+      info.appendChild(plateEl);
+
       card.appendChild(sw); card.appendChild(info);
       carsCol.appendChild(card);
 
@@ -269,10 +281,10 @@ export async function initHome(){
       if(existing) return;
       const banner = document.createElement('div'); banner.id = 'deletedBanner_' + (b.original_id || b.id); banner.className = 'deletion-banner';
       const carId = b.car_id;
-      // fetch car name
+      // fetch car modello
       fetchCars().then(cars=>{
         const car = cars.find(c=>c.id === carId) || {};
-        const carName = car.name || '';
+        const carName = car.modello || '';
         const start = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : '';
         const end = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : '';
         banner.innerHTML = `<div>La prenotazione per <strong>${carName}</strong> ${(b.client_name?(' - '+b.client_name):'')} (${start} → ${end}) è stata cancellata.</div>`;
@@ -296,7 +308,7 @@ export async function initHome(){
       if(document.getElementById(id)) return; // already shown
       const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
       const date = car.insurance_expiry_iso || '';
-      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.name}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
+      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.modello}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
       banner.appendChild(textDiv);
       const btnWrap = document.createElement('div'); btnWrap.style.display='flex'; btnWrap.style.gap='8px'; btnWrap.style.marginLeft='8px';
       const insureBtn = document.createElement('button'); insureBtn.className = 'page-btn primary'; insureBtn.textContent = 'Assicurata';

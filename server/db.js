@@ -14,10 +14,12 @@ ensureDbDir();
 const db = new sqlite3.Database(DB_PATH);
 
 db.serialize(() => {
+
   db.run(
     `CREATE TABLE IF NOT EXISTS cars (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
+      modello TEXT NOT NULL,
+      descrizione TEXT,
       color TEXT,
       size TEXT,
       price_per_day REAL,
@@ -26,9 +28,18 @@ db.serialize(() => {
     )`
   );
 
-  // prevent creating duplicate cars by name or plate
-  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name)`);
+  // prevent creating duplicate cars by modello or plate
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_modello ON cars(modello)`);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate)`);
+
+  // ensure modello and descrizione columns exist for older DBs
+  db.all("PRAGMA table_info(cars)", [], (err, crow) => {
+    if (err || !crow) return;
+    const ccols = crow.map(r => r.name);
+    if (!ccols.includes('modello')) db.run("ALTER TABLE cars ADD COLUMN modello TEXT");
+    if (!ccols.includes('descrizione')) db.run("ALTER TABLE cars ADD COLUMN descrizione TEXT");
+    if (!ccols.includes('insurance_expiry_iso')) db.run("ALTER TABLE cars ADD COLUMN insurance_expiry_iso TEXT");
+  });
 
   // ensure insurance_expiry_iso column exists for older DBs
   db.all("PRAGMA table_info(cars)", [], (err, crow) => {

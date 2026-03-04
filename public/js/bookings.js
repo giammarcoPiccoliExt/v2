@@ -46,9 +46,19 @@ export function initBookings(){
       const el = document.createElement('div'); el.className='car-card';
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(c.color) sw.style.background = c.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
-      const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
+      // modello (bold)
+      const modelloEl = document.createElement('strong'); modelloEl.textContent = c.modello || '';
+      modelloEl.style.display = 'block';
+      info.appendChild(modelloEl);
+      // descrizione (normal)
+      const descrizioneEl = document.createElement('div'); descrizioneEl.textContent = c.descrizione || '';
+      descrizioneEl.style.fontWeight = 'normal';
+      descrizioneEl.style.display = 'block';
+      info.appendChild(descrizioneEl);
+      // targa (plate)
       const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = c.plate || '';
-      info.appendChild(nameEl); info.appendChild(plateEl);
+      plateEl.style.display = 'block';
+      info.appendChild(plateEl);
       el.appendChild(sw); el.appendChild(info);
       legend.appendChild(el);
     });
@@ -101,7 +111,7 @@ export function initBookings(){
             dayBookings.slice(0,4).forEach(bk=>{
               const car = cars.find(c=>c.id===bk.car_id);
               const dot = document.createElement('span'); dot.style.background = car?.color || '#999';
-              dot.title = (car?car.name:'') + (bk.client_name?(' - '+bk.client_name):(bk.title?(' - '+bk.title):''));
+              dot.title = (car?car.modello:'') + (bk.client_name?(' - '+bk.client_name):(bk.title?(' - '+bk.title):''));
               dots.appendChild(dot);
             });
             cell.appendChild(dots);
@@ -294,7 +304,7 @@ export function initBookings(){
         const meta = document.createElement('div'); meta.className = 'card-meta';
         // title: "nome auto - cliente"
         const titleDiv = document.createElement('div'); titleDiv.className = 'title';
-        if(car){ titleDiv.textContent = car.name + (clientLabel ? (' - ' + clientLabel) : ''); }
+        if(car){ titleDiv.textContent = car.modello + (clientLabel ? (' - ' + clientLabel) : ''); }
         else { titleDiv.textContent = clientLabel || '?'; }
         // plate/targa on its own line
         const plateDiv = document.createElement('div'); plateDiv.className = 'car-plate'; plateDiv.textContent = car ? (car.plate || car.targa || '') : '';

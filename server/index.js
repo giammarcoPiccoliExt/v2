@@ -78,15 +78,15 @@ app.get('/api/cars', (req, res) => {
 });
 
 app.post('/api/cars', requireSession, (req, res) => {
-  const { name, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
-  // check for duplicates (name or plate)
+  const { modello, descrizione, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
+  // check for duplicates (modello or plate)
   const plateVal = plate ? plate : null;
-  db.get('SELECT id FROM cars WHERE name = ? OR (plate IS NOT NULL AND plate = ?) LIMIT 1', [name, plateVal], (err, row) => {
+  db.get('SELECT id FROM cars WHERE modello = ? OR (plate IS NOT NULL AND plate = ?) LIMIT 1', [modello, plateVal], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car modello or plate already exists' });
     db.run(
-      'INSERT INTO cars (name,color,size,price_per_day,plate,insurance_expiry_iso) VALUES (?,?,?,?,?,?)',
-      [name, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null],
+      'INSERT INTO cars (modello,descrizione,color,size,price_per_day,plate,insurance_expiry_iso) VALUES (?,?,?,?,?,?,?)',
+      [modello, descrizione, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID });
@@ -98,15 +98,15 @@ app.post('/api/cars', requireSession, (req, res) => {
 // update car
 app.put('/api/cars/:id', requireSession, (req, res) => {
   const id = req.params.id;
-  const { name, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
+  const { modello, descrizione, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
   const plateVal = plate ? plate : null;
   // check duplicates excluding this id
-  db.get('SELECT id FROM cars WHERE (name = ? OR (plate IS NOT NULL AND plate = ?)) AND id != ? LIMIT 1', [name, plateVal, id], (err, row) => {
+  db.get('SELECT id FROM cars WHERE (modello = ? OR (plate IS NOT NULL AND plate = ?)) AND id != ? LIMIT 1', [modello, plateVal, id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car modello or plate already exists' });
     db.run(
-      'UPDATE cars SET name=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
-      [name, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null, id],
+      'UPDATE cars SET modello=?, descrizione=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
+      [modello, descrizione, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null, id],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         // clear any previous insurance notification so we restart the reminder cycle
