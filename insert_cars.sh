@@ -41,7 +41,7 @@ echo "Using DB: $DB_PATH"
 table_exists=$(sqlite3 "$DB_PATH" "SELECT name FROM sqlite_master WHERE type='table' AND name='cars';") || table_exists=""
 if [ "$table_exists" = "cars" ]; then
   echo "Deleting existing rows from 'cars' table..."
-  sqlite3 "$DB_PATH" "DROP cars;"
+  sqlite3 "$DB_PATH" "DROP TABLE cars;"
 
 else
   echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
