@@ -299,26 +299,31 @@ export function initBookings(){
       // find creator
       const creatorName = bk.creator_name || 'Utente';
       const clientLabel = bk.client_name || bk.title || '';
-        // build card markup without inline styles
-        const row = document.createElement('div'); row.className = 'card-row';
-        const meta = document.createElement('div'); meta.className = 'card-meta';
-        // title: "nome auto - cliente"
-        const titleDiv = document.createElement('div'); titleDiv.className = 'title';
-        if(car){ titleDiv.textContent = car.modello + (clientLabel ? (' - ' + clientLabel) : ''); }
-        else { titleDiv.textContent = clientLabel || '?'; }
-        // plate/targa on its own line
-        const plateDiv = document.createElement('div'); plateDiv.className = 'car-plate'; plateDiv.textContent = car ? (car.plate || car.targa || '') : '';
-        const datesDiv = document.createElement('div'); datesDiv.className = 'dates'; datesDiv.textContent = `${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}`;
-        const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName ? ('Creato da: ' + creatorName) : '';
-        meta.appendChild(titleDiv); meta.appendChild(plateDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
-        const actions = document.createElement('div'); actions.className = 'device-actions';
-        const editBtn = document.createElement('button'); editBtn.className = 'page-btn editBooking'; editBtn.textContent = 'Modifica';
-        const delBtn = document.createElement('button'); delBtn.className = 'page-btn delBooking danger'; delBtn.textContent = 'Elimina';
-        actions.appendChild(editBtn); actions.appendChild(delBtn);
-        row.appendChild(meta); row.appendChild(actions);
-        card.appendChild(row);
-        const desc = document.createElement('div'); desc.className = 'card-desc'; desc.innerHTML = bk.description || '';
-        card.appendChild(desc);
+      // build card markup
+      const row = document.createElement('div'); row.className = 'card-row';
+      const meta = document.createElement('div'); meta.className = 'card-meta';
+      // title: "modello descrizione - cliente"
+      const titleDiv = document.createElement('div'); titleDiv.className = 'title';
+      if(car){
+        let carLabel = car.modello || '';
+        if(car.descrizione) carLabel += ' ' + car.descrizione;
+        titleDiv.textContent = carLabel + (clientLabel ? (' - ' + clientLabel) : '');
+      } else {
+        titleDiv.textContent = clientLabel || '?';
+      }
+      // plate/targa on its own line
+      const plateDiv = document.createElement('div'); plateDiv.className = 'car-plate'; plateDiv.textContent = car ? (car.plate || car.targa || '') : '';
+      const datesDiv = document.createElement('div'); datesDiv.className = 'dates'; datesDiv.textContent = `${bk.start_iso.slice(0,10)} → ${bk.end_iso.slice(0,10)}`;
+      const creatorDiv = document.createElement('div'); creatorDiv.className = 'creator'; creatorDiv.textContent = creatorName ? ('Creato da: ' + creatorName) : '';
+      meta.appendChild(titleDiv); meta.appendChild(plateDiv); meta.appendChild(datesDiv); meta.appendChild(creatorDiv);
+      const actions = document.createElement('div'); actions.className = 'device-actions';
+      const editBtn = document.createElement('button'); editBtn.className = 'page-btn editBooking'; editBtn.textContent = 'Modifica';
+      const delBtn = document.createElement('button'); delBtn.className = 'page-btn delBooking danger'; delBtn.textContent = 'Elimina';
+      actions.appendChild(editBtn); actions.appendChild(delBtn);
+      row.appendChild(meta); row.appendChild(actions);
+      card.appendChild(row);
+      const desc = document.createElement('div'); desc.className = 'card-desc'; desc.innerHTML = bk.description || '';
+      card.appendChild(desc);
       editBtn.addEventListener('click', ()=>{ modal.classList.add('hidden'); openEditBooking(bk, cars); });
       delBtn.addEventListener('click', async ()=>{
         if(!confirm('Eliminare la prenotazione?')) return;
@@ -347,6 +352,8 @@ export function initBookings(){
       const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
       // populate car options
       cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+        // use modello + descrizione for car option label
+        cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = (c.modello || '') + (c.descrizione ? ' ' + c.descrizione : ''); if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
       // submit handler for overlay
       const onSubmitOverlay = async (e)=>{
         e.preventDefault();

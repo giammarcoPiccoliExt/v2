@@ -97,31 +97,17 @@ export async function initSettings(){
       form.querySelector('input[name="descrizione"]').value = '';
       form.querySelector('input[name="color"]').value = '';
       form.querySelector('input[name="plate"]').value = '';
-    form.querySelector('input[name="insurance_expiry_iso"]').value = '';
+      form.querySelector('input[name="insurance_expiry_iso"]').value = '';
       form.querySelector('select[name="size"]').value = 'media';
       renderSwatches('#ffffff');
       modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
         const data = new FormData(form); const body = Object.fromEntries(data.entries());
-        // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
         if(body.insurance_expiry_iso === '') body.insurance_expiry_iso = null;
-        // require modello, plate e size
-        const modelloNorm = (body.modello||'').trim();
-        const plateNorm = (body.plate||'').toUpperCase();
-        if(!modelloNorm || !plateNorm || !body.size){
-          alert('Compila i campi obbligatori: modello, targa e dimensione.');
-          return;
-        }
-        // client-side duplicate check SOLO su targa
-        try{
-          const existing = await fetchJson('/api/cars');
-          const conflict = existing.find(x => plateNorm && ((x.plate||'').toUpperCase() === plateNorm));
-          if(conflict){ alert('Errore: Targa già esistente.'); return; }
-        }catch(e){ /* ignore and rely on server */ }
+        // Nessuna validazione: invia sempre la richiesta
         const res = await fetchRaw('/api/cars', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-        if(res.status===409){ alert('Errore: Targa già esistente.'); return; }
         if(!res.ok){ alert('Salvataggio fallito'); return; }
         modal.classList.add('hidden'); form.removeEventListener('submit', submit); load();
       };
