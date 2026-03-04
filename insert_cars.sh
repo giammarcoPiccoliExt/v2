@@ -15,19 +15,19 @@ colors=(
 )
 
 entries=(
-  "FIAT TIPO 1.6|FR 272 VV|media"
-  "FIAT TIPO 1.3|FW 596 EC|media"
-  "FIAT TIPO 1.6 Automatica|FZ 249 RM|media"
-  "VOLKSWAGEN TOURAN 7 POSTI|ET 314 LJ|grande"
-  "OPEL CORSA|FG 852 NP|piccola"
-  "BMW 320D|ET 256 EY|media"
-  "FIAT DUCATO 9 Posti|FE 694 YJ|grande"
-  "FIAT TALENTO 9 posti|GC 053 MN|grande"
-  "RENAULT MEGANE|FF 379 ED|media"
-  "FIAT DUCATO LUNGO|FA 771 NY|grande"
-  "FIAT DUCATO CORTO|FS 078 TR|grande"
-  "FORD TRANSIT|FG 631 ST|grande"
-  "LANCIA Y|FB 241 VX|piccola"
+"TIPO 1.6|FR 272 VV|media"
+"TIPO 1.3|FW 596 EC|media"
+"TIPO 1.6 Automatica|FZ 249 RM|media"
+"TOURAN 7 POSTI|ET 314 LJ|grande"
+"CORSA|FG 852 NP|piccola"
+"320D|ET 256 EY|media"
+"DUCATO 9 Posti|FE 694 YJ|grande"
+"TALENTO 9 posti|GC 053 MN|grande"
+"MEGANE|FF 379 ED|media"
+"DUCATO LUNGO|FA 771 NY|grande"
+"DUCATO CORTO|FS 078 TR|grande"
+"TRANSIT|FG 631 ST|grande"
+"LANCIA Y|FB 241 VX|piccola"
 )
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
