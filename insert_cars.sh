@@ -52,7 +52,7 @@ sqlite3 "$DB_PATH" "CREATE TABLE IF NOT EXISTS cars (
   plate TEXT,
   insurance_expiry_iso TEXT
 );"
-sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_modello ON cars(modello);"
+## L'unicità ora è solo sulla targa
 sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);"
 
 
