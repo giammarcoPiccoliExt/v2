@@ -46,6 +46,23 @@ if [ "$DROP_FLAG" = "drop" ] || [ "$DROP_FLAG" = "--drop" ] || [ "$DROP_FLAG" = 
     rm -f "$DB_PATH"
     # ensure parent directory exists for new DB
     mkdir -p "$(dirname "$DB_PATH")"
+    # create fresh DB and cars table with expected schema
+    echo "Creating new DB and cars table..."
+    sqlite3 "$DB_PATH" <<'SQL'
+CREATE TABLE IF NOT EXISTS cars (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  model TEXT,
+  details TEXT,
+  color TEXT,
+  size TEXT,
+  price_per_day REAL,
+  plate TEXT,
+  insurance_expiry_iso TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);
+SQL
   else
     echo "DB file not found; nothing to drop."
   fi
