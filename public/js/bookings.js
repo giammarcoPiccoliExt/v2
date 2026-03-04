@@ -353,7 +353,8 @@ export function initBookings(){
       // populate car options
       cars.forEach(c=>{
         let label = (c.modello || '');
-        if(c.descrizione) label += ' ' + c.descrizione;
+        if(c.descrizione) label += ' - ' + c.descrizione;
+        if(c.plate) label += ' / ' + c.plate;
         const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
       });
       // submit handler for overlay
@@ -385,7 +386,8 @@ export function initBookings(){
     // populate car options
     cars.forEach(c=>{
       let label = (c.modello || '');
-      if(c.descrizione) label += ' ' + c.descrizione;
+      if(c.descrizione) label += ' - ' + c.descrizione;
+      if(c.plate) label += ' / ' + c.plate;
       const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
     });
     form.querySelector('input[name="client_name"]').value = bk.client_name || '';
