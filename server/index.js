@@ -8,7 +8,7 @@ const selfsigned = require('selfsigned');
 const WebSocket = require('ws');
 
 const db = require('./db');
-// DDNS support removed
+const ddns = require('./ddns');
 const crypto = require('crypto');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
@@ -33,19 +33,11 @@ if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
   const attrs = [{ name: 'commonName', value: 'localhost' }];
   try {
     const pems = selfsigned.generate(attrs, { days: 3650 });
-    // ensure returned values are strings or Buffers before writing
-    const okPrivate = pems && (typeof pems.private === 'string' || Buffer.isBuffer(pems.private));
-    const okCert = pems && (typeof pems.cert === 'string' || Buffer.isBuffer(pems.cert));
-    if (okPrivate && okCert) {
+    if (pems && pems.private && pems.cert) {
       fs.writeFileSync(keyPath, pems.private);
       fs.writeFileSync(certPath, pems.cert);
     } else {
-      // unexpected return type from selfsigned; surface helpful info then fallback
-      console.error('selfsigned returned unexpected data types for pems:', {
-        privateType: pems && pems.private ? typeof pems.private : typeof pems.private,
-        certType: pems && pems.cert ? typeof pems.cert : typeof pems.cert
-      });
-      throw new Error('selfsigned returned invalid PEM data');
+      throw new Error('selfsigned returned invalid data');
     }
   } catch (e) {
     console.error('selfsigned generation failed, falling back to openssl:', e.message);
@@ -308,7 +300,10 @@ server.listen(PORT, () => {
   console.log(`${usePlainHttp ? 'HTTP' : 'HTTPS'} server listening on port ${PORT}`);
 });
 
-// DDNS support removed (no-op)
+// start DDNS updater only if configured
+try {
+  if (config.ddns && config.ddns.provider) ddns.startDDNS(config);
+} catch (e) { console.error('DDNS start error', e.message); }
 
 // export for electron control
 module.exports = { server, shutdown: () => server.close() };
