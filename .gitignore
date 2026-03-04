@@ -24,6 +24,7 @@ Thumbs.db
 # Certificates, DB backups and runtime data
 certs/
 backups/
+data/*.db
 
 # Env / IDE
 .env

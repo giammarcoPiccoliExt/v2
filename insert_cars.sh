@@ -6,8 +6,6 @@ set -euo pipefail
 # If no DB path provided, defaults to ./data/app.db
 
 DB_PATH="${1:-./data/app.db}"
-# optional second arg: 'drop' | '--drop' | '-f' to remove existing DB file before inserts
-DROP_FLAG="${2:-}" 
 INS_DATE="2027-03-12"  # ISO format for 12/03/2027
 
 colors=(
@@ -39,27 +37,15 @@ fi
 
 echo "Using DB: $DB_PATH"
 
-# If requested, remove DB file before inserting (drop)
-if [ "$DROP_FLAG" = "drop" ] || [ "$DROP_FLAG" = "--drop" ] || [ "$DROP_FLAG" = "-f" ]; then
-  if [ -f "$DB_PATH" ]; then
-    echo "Dropping DB file: $DB_PATH"
-    rm -f "$DB_PATH"
-    # ensure parent directory exists for new DB
-    mkdir -p "$(dirname "$DB_PATH")"
-  else
-    echo "DB file not found; nothing to drop."
-  fi
+# If table exists, delete all existing rows to start fresh
+table_exists=$(sqlite3 "$DB_PATH" "SELECT name FROM sqlite_master WHERE type='table' AND name='cars';") || table_exists=""
+if [ "$table_exists" = "cars" ]; then
+  echo "Deleting existing rows from 'cars' table..."
+  sqlite3 "$DB_PATH" "DELETE FROM cars;"
+  # reset AUTOINCREMENT counter if sqlite_sequence present
+  sqlite3 "$DB_PATH" "DELETE FROM sqlite_sequence WHERE name='cars';" 2>/dev/null || true
 else
-  # If table exists, delete all existing rows to start fresh
-  table_exists=$(sqlite3 "$DB_PATH" "SELECT name FROM sqlite_master WHERE type='table' AND name='cars';") || table_exists=""
-  if [ "$table_exists" = "cars" ]; then
-    echo "Deleting existing rows from 'cars' table..."
-    sqlite3 "$DB_PATH" "DELETE FROM cars;"
-    # reset AUTOINCREMENT counter if sqlite_sequence present
-    sqlite3 "$DB_PATH" "DELETE FROM sqlite_sequence WHERE name='cars';" 2>/dev/null || true
-  else
-    echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
-  fi
+  echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
 fi
 
 for e in "${entries[@]}"; do
@@ -80,4 +66,3 @@ done
 
 echo "Done. Verify inserted rows with: sqlite3 '$DB_PATH' 'SELECT id,name,plate,size,insurance_expiry_iso FROM cars ORDER BY id DESC LIMIT 20;'
 "
-
