@@ -12,6 +12,7 @@ body {
 .page {
   display: none;
   padding: 12px;
+  padding-bottom: 80px; /* spazio per bottom-nav o pulsanti fissi */
 }
 .page.active {
   display: block;
