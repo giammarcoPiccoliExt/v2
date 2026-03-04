@@ -95,9 +95,10 @@ export function initSummary(){
           // left: car card (name + plate) and creator underneath
           const left = document.createElement('div'); left.className = 'summary-car'; left.style.minWidth='120px'; left.style.maxWidth='220px'; left.style.flex='0 0 180px'; left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='6px';
           const carInfo = document.createElement('div'); carInfo.style.display='flex'; carInfo.style.flexDirection='column';
-          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.name || 'Auto'; carNameEl.style.fontWeight='700'; carNameEl.style.fontSize='1em';
+          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.model || carObj.name || 'Auto'; carNameEl.style.fontWeight='700'; carNameEl.style.fontSize='1em';
+          const detailsEl = document.createElement('div'); detailsEl.textContent = carObj.details || ''; detailsEl.style.fontSize='0.9em'; detailsEl.style.color='#666';
           const plateEl = document.createElement('div'); plateEl.textContent = plate; plateEl.style.fontSize='0.85em'; plateEl.style.color='#666';
-          carInfo.appendChild(carNameEl); carInfo.appendChild(plateEl);
+          carInfo.appendChild(carNameEl); if(detailsEl.textContent) carInfo.appendChild(detailsEl); carInfo.appendChild(plateEl);
           left.appendChild(carInfo);
           const creatorUnder = document.createElement('div'); creatorUnder.style.fontSize='0.9em'; creatorUnder.style.color='#444'; creatorUnder.style.marginTop='6px'; creatorUnder.textContent = b.creator_name ? ('Creato da: ' + b.creator_name) : '';
           left.appendChild(creatorUnder);

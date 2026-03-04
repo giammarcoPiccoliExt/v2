@@ -18,6 +18,8 @@ db.serialize(() => {
     `CREATE TABLE IF NOT EXISTS cars (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      model TEXT,
+      details TEXT,
       color TEXT,
       size TEXT,
       price_per_day REAL,
@@ -35,6 +37,10 @@ db.serialize(() => {
     if (err || !crow) return;
     const ccols = crow.map(r => r.name);
     if (!ccols.includes('insurance_expiry_iso')) db.run("ALTER TABLE cars ADD COLUMN insurance_expiry_iso TEXT");
+    if (!ccols.includes('model')) db.run("ALTER TABLE cars ADD COLUMN model TEXT");
+    if (!ccols.includes('details')) db.run("ALTER TABLE cars ADD COLUMN details TEXT");
+    // copy existing name into model for backwards compatibility when model missing
+    db.run("UPDATE cars SET model = name WHERE (model IS NULL OR model = '') AND (name IS NOT NULL AND name != '')");
   });
 
   db.run(

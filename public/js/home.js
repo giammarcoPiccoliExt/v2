@@ -111,7 +111,7 @@ export async function initHome(){
       const card = document.createElement('div'); card.className = 'car-card';
       const sw = document.createElement('div'); sw.className = 'color-swatch'; if(car.color) sw.style.background = car.color || '#ddd';
       const info = document.createElement('div'); info.className = 'car-info';
-      const nameEl = document.createElement('strong'); nameEl.textContent = car.name;
+      const nameEl = document.createElement('strong'); nameEl.textContent = car.model || car.name || '';
       const plateEl = document.createElement('div'); plateEl.className = 'car-plate'; plateEl.textContent = car.plate || '';
       info.appendChild(nameEl); info.appendChild(plateEl);
       card.appendChild(sw); card.appendChild(info);
@@ -272,7 +272,7 @@ export async function initHome(){
       // fetch car name
       fetchCars().then(cars=>{
         const car = cars.find(c=>c.id === carId) || {};
-        const carName = car.name || '';
+        const carName = car.model || car.name || '';
         const start = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : '';
         const end = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : '';
         banner.innerHTML = `<div>La prenotazione per <strong>${carName}</strong> ${(b.client_name?(' - '+b.client_name):'')} (${start} → ${end}) è stata cancellata.</div>`;
@@ -296,7 +296,7 @@ export async function initHome(){
       if(document.getElementById(id)) return; // already shown
       const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
       const date = car.insurance_expiry_iso || '';
-      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.name}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
+      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.model || car.name}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
       banner.appendChild(textDiv);
       const btnWrap = document.createElement('div'); btnWrap.style.display='flex'; btnWrap.style.gap='8px'; btnWrap.style.marginLeft='8px';
       const insureBtn = document.createElement('button'); insureBtn.className = 'page-btn primary'; insureBtn.textContent = 'Assicurata';
