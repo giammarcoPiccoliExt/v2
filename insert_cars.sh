@@ -80,3 +80,4 @@ done
 
 echo "Done. Verify inserted rows with: sqlite3 '$DB_PATH' 'SELECT id,name,plate,size,insurance_expiry_iso FROM cars ORDER BY id DESC LIMIT 20;'
 "
+
