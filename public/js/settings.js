@@ -75,7 +75,7 @@ export async function initSettings(){
         try{
           const existing = await fetchJson('/api/cars');
           const conflict = existing.find(x => (x.id != id) && plateNorm && ((x.plate||'').toUpperCase() === plateNorm));
-          if(conflict){ alert('Errore: Targa già esistente per un'altra auto.'); return; }
+          if(conflict){ alert('Errore: Targa già esistente per un\'altra auto.'); return; }
         }catch(e){ /* ignore and continue to server validation */ }
         const res = await fetchRaw(`/api/cars/${id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
         if(res.status===409){ alert('Errore: Targa già esistente.'); return; }
