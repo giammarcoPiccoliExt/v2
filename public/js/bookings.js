@@ -351,9 +351,11 @@ export function initBookings(){
       form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
       const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
       // populate car options
-      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
-        // use modello + descrizione for car option label
-        cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = (c.modello || '') + (c.descrizione ? ' ' + c.descrizione : ''); if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+      cars.forEach(c=>{
+        let label = (c.modello || '');
+        if(c.descrizione) label += ' ' + c.descrizione;
+        const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
+      });
       // submit handler for overlay
       const onSubmitOverlay = async (e)=>{
         e.preventDefault();
@@ -381,7 +383,11 @@ export function initBookings(){
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
     const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
     // populate car options
-    cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o); });
+    cars.forEach(c=>{
+      let label = (c.modello || '');
+      if(c.descrizione) label += ' ' + c.descrizione;
+      const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
+    });
     form.querySelector('input[name="client_name"]').value = bk.client_name || '';
     form.querySelector('input[name="description"]').value = bk.description || '';
     // set submit handler to PUT
