@@ -8,7 +8,7 @@ const selfsigned = require('selfsigned');
 const WebSocket = require('ws');
 
 const db = require('./db');
-const ddns = require('./ddns');
+// DDNS support removed
 const crypto = require('crypto');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
@@ -308,10 +308,7 @@ server.listen(PORT, () => {
   console.log(`${usePlainHttp ? 'HTTP' : 'HTTPS'} server listening on port ${PORT}`);
 });
 
-// start DDNS updater only if configured
-try {
-  if (config.ddns && config.ddns.provider) ddns.startDDNS(config);
-} catch (e) { console.error('DDNS start error', e.message); }
+// DDNS support removed (no-op)
 
 // export for electron control
 module.exports = { server, shutdown: () => server.close() };
