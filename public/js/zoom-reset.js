@@ -1,4 +1,50 @@
-// Zoom detection and reset button for mobile browsers
+// Zoom detection and auto-reset for mobile browsers
+(function(){
+  let lastScale = 1;
+  let zoomTimeout = null;
+
+  function isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
+  function resetZoom() {
+    document.body.style.transform = '';
+    document.body.style.transformOrigin = '';
+    document.body.style.zoom = '';
+    document.documentElement.style.zoom = '';
+    if(window.visualViewport) window.visualViewport.scale = 1;
+    window.scrollTo(0,0);
+    lastScale = 1;
+  }
+
+  function detectZoom() {
+    let scale = 1;
+    if (window.visualViewport) {
+      scale = window.visualViewport.scale;
+    } else if (window.outerWidth && window.innerWidth) {
+      scale = window.outerWidth / window.innerWidth;
+    }
+    if (scale > 1.01) {
+      if (zoomTimeout) clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(()=>{
+        resetZoom();
+      }, 1000);
+      lastScale = scale;
+    } else {
+      if (zoomTimeout) clearTimeout(zoomTimeout);
+      lastScale = 1;
+    }
+  }
+
+  if(isMobile()){
+    window.addEventListener('resize', detectZoom, {passive:true});
+    window.addEventListener('orientationchange', detectZoom, {passive:true});
+    if(window.visualViewport) window.visualViewport.addEventListener('resize', detectZoom, {passive:true});
+    document.addEventListener('focusin', detectZoom, {passive:true});
+    document.addEventListener('focusout', detectZoom, {passive:true});
+    setTimeout(detectZoom, 500);
+  }
+})();// Zoom detection and reset button for mobile browsers
 (function(){
   let lastScale = 1;
   let zoomBtn = null;

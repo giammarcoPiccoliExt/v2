@@ -420,7 +420,12 @@ export async function initHome(){
     cars.forEach(c=>{ groups[c.size || 'Unknown'] = groups[c.size || 'Unknown'] || []; groups[c.size || 'Unknown'].push(c); });
     Object.keys(groups).forEach(size=>{
       const optg = document.createElement('optgroup'); optg.label = size;
-      groups[size].forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} (${c.plate||''})`; optg.appendChild(o); });
+      groups[size].forEach(c=>{
+        let label = (c.modello || '');
+        if(c.descrizione) label += ' - ' + c.descrizione;
+        if(c.plate) label += ' / ' + c.plate;
+        const o = document.createElement('option'); o.value = c.id; o.textContent = label; optg.appendChild(o);
+      });
       select.appendChild(optg);
     });
 
