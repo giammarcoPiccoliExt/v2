@@ -38,14 +38,23 @@ fi
 echo "Using DB: $DB_PATH"
 
 # If table exists, delete all existing rows to start fresh
-table_exists=$(sqlite3 "$DB_PATH" "SELECT name FROM sqlite_master WHERE type='table' AND name='cars';") || table_exists=""
-if [ "$table_exists" = "cars" ]; then
-  echo "Deleting existing rows from 'cars' table..."
-  sqlite3 "$DB_PATH" "DROP TABLE cars;"
 
-else
-  echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
-fi
+
+# Ricrea la tabella cars con la nuova struttura
+sqlite3 "$DB_PATH" "DROP TABLE IF EXISTS cars;"
+sqlite3 "$DB_PATH" "CREATE TABLE IF NOT EXISTS cars (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  modello TEXT NOT NULL,
+  descrizione TEXT,
+  color TEXT,
+  size TEXT,
+  price_per_day REAL,
+  plate TEXT,
+  insurance_expiry_iso TEXT
+);"
+sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_modello ON cars(modello);"
+sqlite3 "$DB_PATH" "CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);"
+
 
 
 for e in "${entries[@]}"; do
