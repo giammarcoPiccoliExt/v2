@@ -79,11 +79,11 @@ app.get('/api/cars', (req, res) => {
 
 app.post('/api/cars', requireSession, (req, res) => {
   const { modello, descrizione, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
-  // check for duplicates (modello or plate)
+  // check for duplicates (plate only)
   const plateVal = plate ? plate : null;
-  db.get('SELECT id FROM cars WHERE modello = ? OR (plate IS NOT NULL AND plate = ?) LIMIT 1', [modello, plateVal], (err, row) => {
+  db.get('SELECT id FROM cars WHERE plate IS NOT NULL AND plate = ? LIMIT 1', [plateVal], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car modello or plate already exists' });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Targa già esistente' });
     db.run(
       'INSERT INTO cars (modello,descrizione,color,size,price_per_day,plate,insurance_expiry_iso) VALUES (?,?,?,?,?,?,?)',
       [modello, descrizione, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null],
@@ -100,10 +100,10 @@ app.put('/api/cars/:id', requireSession, (req, res) => {
   const id = req.params.id;
   const { modello, descrizione, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
   const plateVal = plate ? plate : null;
-  // check duplicates excluding this id
-  db.get('SELECT id FROM cars WHERE (modello = ? OR (plate IS NOT NULL AND plate = ?)) AND id != ? LIMIT 1', [modello, plateVal, id], (err, row) => {
+  // check duplicates (plate only), excluding this id
+  db.get('SELECT id FROM cars WHERE plate IS NOT NULL AND plate = ? AND id != ? LIMIT 1', [plateVal, id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (row) return res.status(409).json({ error: 'duplicate', message: 'Car modello or plate already exists' });
+    if (row) return res.status(409).json({ error: 'duplicate', message: 'Targa già esistente' });
     db.run(
       'UPDATE cars SET modello=?, descrizione=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
       [modello, descrizione, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null, id],
