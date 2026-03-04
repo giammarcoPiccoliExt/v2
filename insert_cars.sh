@@ -15,19 +15,19 @@ colors=(
 )
 
 entries=(
-"TIPO 1.6|FR 272 VV|media"
-"TIPO 1.3|FW 596 EC|media"
-"TIPO 1.6 Automatica|FZ 249 RM|media"
-"TOURAN 7 POSTI|ET 314 LJ|grande"
-"CORSA|FG 852 NP|piccola"
-"320D|ET 256 EY|media"
-"DUCATO 9 Posti|FE 694 YJ|grande"
-"TALENTO 9 posti|GC 053 MN|grande"
-"MEGANE|FF 379 ED|media"
-"DUCATO LUNGO|FA 771 NY|grande"
-"DUCATO CORTO|FS 078 TR|grande"
-"TRANSIT|FG 631 ST|grande"
-"LANCIA Y|FB 241 VX|piccola"
+"TIPO 1.6||FR272VV|media"
+"TIPO 1.3||FW596EC|media"
+"TIPO 1.6|Automatica|FZZ249RM|media"
+"TOURAN|7 POSTI|ETT314LJ|grande"
+"CORSA||FGG852NP|piccola"
+"320D||ETT256EY|media"
+"DUCATO|9 Posti|FEE694YJ|grande"
+"TALENTO|9 posti|GCC053MN|grande"
+"MEGANE||FFF379ED|media"
+"DUCATO|LUNGO|FAA771NY|grande"
+"DUCATO|CORTO|FSS078TR|grande"
+"TRANSIT||FGG631ST|grande"
+"LANCIA Y||FBB241VX|piccola"
 )
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
@@ -48,20 +48,22 @@ else
   echo "Table 'cars' not found in DB; inserts will create rows if table exists later."
 fi
 
+
 for e in "${entries[@]}"; do
-  IFS='|' read -r name plate size <<< "$e"
+  IFS='|' read -r modello descrizione plate size <<< "$e"
   # pick random color
   idx=$((RANDOM % ${#colors[@]}))
   color=${colors[$idx]}
-    # escape single quotes for SQL (replace ' with '')
-    esc_name=${name//\'/\'\'}
-    esc_plate=${plate//\'/\'\'}
-    esc_color=${color//\'/\'\'}
-    esc_size=${size//\'/\'\'}
+  # escape single quotes for SQL (replace ' with '')
+  esc_modello=${modello//\'/\'\'}
+  esc_descrizione=${descrizione//\'/\'\'}
+  esc_plate=${plate//\'/\'\'}
+  esc_color=${color//\'/\'\'}
+  esc_size=${size//\'/\'\'}
 
-  sql="INSERT OR IGNORE INTO cars (name, color, size, plate, insurance_expiry_iso) VALUES ('$esc_name', '$esc_color', '$esc_size', '$esc_plate', '$INS_DATE');"
+  sql="INSERT OR IGNORE INTO cars (modello, descrizione, color, size, plate, insurance_expiry_iso) VALUES ('$esc_modello', '$esc_descrizione', '$esc_color', '$esc_size', '$esc_plate', '$INS_DATE');"
   sqlite3 "$DB_PATH" "$sql"
-  echo "Inserted (or ignored if duplicate): $name / $plate / $size / $color / $INS_DATE"
+  echo "Inserted (or ignored if duplicate): $modello / $descrizione / $plate / $size / $color / $INS_DATE"
 done
 
 echo "Done. Verify inserted rows with: sqlite3 '$DB_PATH' 'SELECT id,name,plate,size,insurance_expiry_iso FROM cars ORDER BY id DESC LIMIT 20;'
