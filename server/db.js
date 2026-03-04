@@ -28,9 +28,10 @@ db.serialize(() => {
     )`
   );
 
-  // prevent creating duplicate cars by modello or plate
-  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_modello ON cars(modello)`);
+  // prevent creating duplicate cars by plate only
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate)`);
+  // Rimuovi eventuale indice unico su modello se esiste (migrazione)
+  db.run(`DROP INDEX IF EXISTS idx_cars_modello`);
 
   // ensure modello and descrizione columns exist for older DBs
   db.all("PRAGMA table_info(cars)", [], (err, crow) => {
