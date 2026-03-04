@@ -33,11 +33,19 @@ if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
   const attrs = [{ name: 'commonName', value: 'localhost' }];
   try {
     const pems = selfsigned.generate(attrs, { days: 3650 });
-    if (pems && pems.private && pems.cert) {
+    // ensure returned values are strings or Buffers before writing
+    const okPrivate = pems && (typeof pems.private === 'string' || Buffer.isBuffer(pems.private));
+    const okCert = pems && (typeof pems.cert === 'string' || Buffer.isBuffer(pems.cert));
+    if (okPrivate && okCert) {
       fs.writeFileSync(keyPath, pems.private);
       fs.writeFileSync(certPath, pems.cert);
     } else {
-      throw new Error('selfsigned returned invalid data');
+      // unexpected return type from selfsigned; surface helpful info then fallback
+      console.error('selfsigned returned unexpected data types for pems:', {
+        privateType: pems && pems.private ? typeof pems.private : typeof pems.private,
+        certType: pems && pems.cert ? typeof pems.cert : typeof pems.cert
+      });
+      throw new Error('selfsigned returned invalid PEM data');
     }
   } catch (e) {
     console.error('selfsigned generation failed, falling back to openssl:', e.message);
