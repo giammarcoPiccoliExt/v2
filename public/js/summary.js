@@ -48,7 +48,12 @@ export function initSummary(){
         <button id="resetFilters" class="page-btn secondary">Reset</button>`;
       // populate car select
       const carSelect = filters.querySelector('#filterCar');
-      cars.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name} ${c.plate?('('+c.plate+')'):''}`; carSelect.appendChild(o); });
+      cars.forEach(c=>{
+        let label = (c.modello || '');
+        if(c.descrizione) label += ' ' + c.descrizione;
+        if(c.plate) label += ' (' + c.plate + ')';
+        const o = document.createElement('option'); o.value = c.id; o.textContent = label; carSelect.appendChild(o);
+      });
 
       // container for list
       const list = document.createElement('div'); list.className='summary-list';
@@ -95,7 +100,11 @@ export function initSummary(){
           // left: car card (name + plate) and creator underneath
           const left = document.createElement('div'); left.className = 'summary-car'; left.style.minWidth='120px'; left.style.maxWidth='220px'; left.style.flex='0 0 180px'; left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='6px';
           const carInfo = document.createElement('div'); carInfo.style.display='flex'; carInfo.style.flexDirection='column';
-          const carNameEl = document.createElement('div'); carNameEl.textContent = carObj.name || 'Auto'; carNameEl.style.fontWeight='700'; carNameEl.style.fontSize='1em';
+          const carNameEl = document.createElement('div');
+          let label = (carObj.modello || '');
+          if(carObj.descrizione) label += ' ' + carObj.descrizione;
+          carNameEl.textContent = label || 'Auto';
+          carNameEl.style.fontWeight='700'; carNameEl.style.fontSize='1em';
           const plateEl = document.createElement('div'); plateEl.textContent = plate; plateEl.style.fontSize='0.85em'; plateEl.style.color='#666';
           carInfo.appendChild(carNameEl); carInfo.appendChild(plateEl);
           left.appendChild(carInfo);
