@@ -78,15 +78,15 @@ app.get('/api/cars', (req, res) => {
 });
 
 app.post('/api/cars', requireSession, (req, res) => {
-  const { name, color, size, price_per_day, plate } = req.body;
+  const { name, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
   // check for duplicates (name or plate)
   const plateVal = plate ? plate : null;
   db.get('SELECT id FROM cars WHERE name = ? OR (plate IS NOT NULL AND plate = ?) LIMIT 1', [name, plateVal], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
     db.run(
-      'INSERT INTO cars (name,color,size,price_per_day,plate) VALUES (?,?,?,?,?)',
-      [name, color, size, price_per_day || null, plateVal],
+      'INSERT INTO cars (name,color,size,price_per_day,plate,insurance_expiry_iso) VALUES (?,?,?,?,?,?)',
+      [name, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID });
@@ -98,17 +98,19 @@ app.post('/api/cars', requireSession, (req, res) => {
 // update car
 app.put('/api/cars/:id', requireSession, (req, res) => {
   const id = req.params.id;
-  const { name, color, size, price_per_day, plate } = req.body;
+  const { name, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
   const plateVal = plate ? plate : null;
   // check duplicates excluding this id
   db.get('SELECT id FROM cars WHERE (name = ? OR (plate IS NOT NULL AND plate = ?)) AND id != ? LIMIT 1', [name, plateVal, id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (row) return res.status(409).json({ error: 'duplicate', message: 'Car name or plate already exists' });
     db.run(
-      'UPDATE cars SET name=?, color=?, size=?, price_per_day=?, plate=? WHERE id=?',
-      [name, color, size, price_per_day || null, plateVal, id],
+      'UPDATE cars SET name=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
+      [name, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null, id],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
+        // clear any previous insurance notification so we restart the reminder cycle
+        db.run('DELETE FROM insurance_notifications WHERE car_id = ?', [id], function (e) {});
         res.json({ changed: this.changes });
       }
     );
@@ -182,6 +184,53 @@ function broadcast(obj) {
     if (c.readyState === WebSocket.OPEN) c.send(msg);
   });
 }
+
+// Insurance expiry reminder: check cars daily and notify when expiry within 10 days.
+async function checkInsuranceExpiries(){
+  try{
+    db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
+      if(err || !rows) return;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      rows.forEach(car=>{
+        try{
+          const iso = car.insurance_expiry_iso;
+          if(!iso) return;
+          // accept date formats like YYYY-MM-DD or full ISO
+          const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
+          if(isNaN(exp)) return;
+          const diffMs = exp.getTime() - today.getTime();
+          const daysLeft = Math.ceil(diffMs / 86400000);
+          if(daysLeft <= 10 && daysLeft >= 0){
+            // check last notification
+            db.get('SELECT last_notified FROM insurance_notifications WHERE car_id = ?', [car.id], (err2, row2)=>{
+              const nowIso = new Date().toISOString();
+              let shouldNotify = false;
+              if(err2) shouldNotify = true;
+              else if(!row2 || !row2.last_notified) shouldNotify = true;
+              else {
+                const last = new Date(row2.last_notified);
+                if(isNaN(last)) shouldNotify = true;
+                else {
+                  const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+                  if(diffDays >= 2) shouldNotify = true;
+                }
+              }
+              if(shouldNotify){
+                broadcast({ type:'insurance_alert', car: { id: car.id, name: car.name, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
+                db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified) VALUES (?,?)', [car.id, nowIso], function(e){});
+              }
+            });
+          }
+        }catch(e){}
+      });
+    });
+  }catch(e){ console.error('insurance check error', e); }
+}
+
+// run at startup and every 12 hours
+setTimeout(checkInsuranceExpiries, 1000 * 5);
+setInterval(checkInsuranceExpiries, 1000 * 60 * 60 * 12);
 
 // simple in-memory session store for passcode logins
 const sessions = new Map(); // token -> { id, name, created }

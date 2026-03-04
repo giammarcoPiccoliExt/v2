@@ -286,6 +286,92 @@ export async function initHome(){
 
   // listen for realtime deletion events
   window.addEventListener('booking:deleted', (ev)=>{ try{ showDeletionBanner(ev.detail); }catch(e){} });
+  // listen for insurance expiry alerts
+  window.addEventListener('insurance:alert', (ev)=>{ try{ const m = ev.detail; showInsuranceBanner(m.car, m.days_left); }catch(e){} });
+
+  function showInsuranceBanner(car, daysLeft){
+    try{
+      const hdr = document.querySelector('header') || document.body;
+      const id = 'insuranceBanner_' + (car.id || 'x');
+      if(document.getElementById(id)) return; // already shown
+      const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
+      const date = car.insurance_expiry_iso || '';
+      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.name}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
+      banner.appendChild(textDiv);
+      const btnWrap = document.createElement('div'); btnWrap.style.display='flex'; btnWrap.style.gap='8px'; btnWrap.style.marginLeft='8px';
+      const insureBtn = document.createElement('button'); insureBtn.className = 'page-btn primary'; insureBtn.textContent = 'Assicurata';
+      const close = document.createElement('button'); close.className = 'page-btn'; close.textContent = 'Chiudi';
+      close.addEventListener('click', ()=>{ banner.remove(); });
+      btnWrap.appendChild(insureBtn); btnWrap.appendChild(close);
+      banner.appendChild(btnWrap);
+      hdr.insertAdjacentElement('afterend', banner);
+
+      // modal creation function (reuse if exists)
+      function openInsuranceModal(){
+        let modal = document.getElementById('insuranceModal');
+        if(!modal){
+          modal = document.createElement('div'); modal.id = 'insuranceModal'; modal.className = 'modal';
+          modal.innerHTML = `
+            <div class="modal-content">
+              <button class="modal-close" id="insuranceModalClose">✕</button>
+              <h4>Segna assicurata</h4>
+              <form id="insuranceModalForm">
+                <div class="field" style="display:flex;gap:8px;align-items:center">
+                  <div style="flex:0 0 80px"><label>Giorno</label><select name="day"></select></div>
+                  <div style="flex:0 0 140px"><label>Mese</label><select name="month"></select></div>
+                  <div style="flex:1"><label>Anno</label><input name="year" type="number" min="1900" style="width:100%"/></div>
+                </div>
+                <div class="actions" style="margin-top:10px">
+                  <button type="submit" class="page-btn primary">Salva</button>
+                  <button type="button" class="page-btn" id="insuranceModalCancel">Annulla</button>
+                </div>
+              </form>
+            </div>`;
+          document.body.appendChild(modal);
+        }
+        // populate selects
+        const form = modal.querySelector('#insuranceModalForm');
+        const daySel = form.querySelector('select[name="day"]');
+        const monthSel = form.querySelector('select[name="month"]');
+        const yearIn = form.querySelector('input[name="year"]');
+        daySel.innerHTML = '';
+        for(let d=1; d<=31; d++){ const o = document.createElement('option'); o.value = String(d).padStart(2,'0'); o.textContent = String(d).padStart(2,'0'); daySel.appendChild(o); }
+        monthSel.innerHTML = '';
+        const monthNames = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+        monthNames.forEach((m,i)=>{ const o = document.createElement('option'); o.value = String(i+1).padStart(2,'0'); o.textContent = m; monthSel.appendChild(o); });
+        // prefill from car date if available
+        let pre = null;
+        try{ if(car.insurance_expiry_iso) pre = (car.insurance_expiry_iso||'').slice(0,10); }catch(e){}
+        const now = new Date();
+        if(pre){ const parts = pre.split('-'); if(parts.length===3){ yearIn.value = parts[0]; monthSel.value = parts[1]; daySel.value = parts[2]; } else { yearIn.value = now.getFullYear(); monthSel.value = String(now.getMonth()+1).padStart(2,'0'); daySel.value = String(now.getDate()).padStart(2,'0'); } }
+        else { yearIn.value = now.getFullYear(); monthSel.value = String(now.getMonth()+1).padStart(2,'0'); daySel.value = String(now.getDate()).padStart(2,'0'); }
+
+        // show modal
+        modal.classList.remove('hidden');
+
+        // handlers
+        modal.querySelector('#insuranceModalClose')?.addEventListener('click', ()=>{ modal.classList.add('hidden'); });
+        modal.querySelector('#insuranceModalCancel')?.addEventListener('click', ()=>{ modal.classList.add('hidden'); });
+        const onSubmit = async (ev)=>{
+          ev.preventDefault();
+          const day = daySel.value; const month = monthSel.value; const year = yearIn.value;
+          if(!day || !month || !year) return alert('Compila giorno, mese e anno.');
+          const iso = `${year}-${month}-${day}`;
+          try{
+            const res = await fetchRaw(`/api/cars/${car.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ insurance_expiry_iso: iso }) });
+            if(res.status===403){ alert('Non autorizzato'); return; }
+            if(res.status===409){ alert('Errore: conflitto'); return; }
+            if(!res.ok){ const j = await res.json().catch(()=>({})); alert('Errore: '+(j.error||res.status)); return; }
+            modal.classList.add('hidden'); banner.remove(); await refresh();
+          }catch(e){ console.error(e); alert('Errore di rete'); }
+        };
+        form.removeEventListener('submit', onSubmit);
+        form.addEventListener('submit', onSubmit);
+      }
+
+      insureBtn.addEventListener('click', ()=>{ openInsuranceModal(); });
+    }catch(e){}
+  }
   // also show banner when navigating to home in case deletion happened while on other page
   window.addEventListener('page:changed', (ev)=>{ try{ if(ev.detail === 'home'){ checkArchivedDeletions(); } }catch(e){} });
 

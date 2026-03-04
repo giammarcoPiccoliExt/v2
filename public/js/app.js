@@ -87,6 +87,8 @@ async function start(){
               window.dispatchEvent(new CustomEvent('booking:created', { detail: msg.booking }));
             } else if(msg.type === 'booking_deleted'){
               window.dispatchEvent(new CustomEvent('booking:deleted', { detail: msg.booking }));
+            } else if(msg.type === 'insurance_alert'){
+              window.dispatchEvent(new CustomEvent('insurance:alert', { detail: msg }));
             }
           }catch(e){}
         });

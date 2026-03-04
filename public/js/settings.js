@@ -14,7 +14,8 @@ export async function initSettings(){
         const info = document.createElement('div'); info.className = 'car-info';
         const nameEl = document.createElement('strong'); nameEl.textContent = c.name;
         const plateEl = document.createElement('div'); plateEl.textContent = c.plate || '';
-        info.appendChild(nameEl); info.appendChild(plateEl);
+        const insEl = document.createElement('div'); insEl.className = 'car-meta'; insEl.textContent = c.insurance_expiry_iso ? ('Scadenza assicurazione: ' + c.insurance_expiry_iso) : '';
+        info.appendChild(nameEl); info.appendChild(plateEl); info.appendChild(insEl);
         const actions = document.createElement('div'); actions.className = 'car-actions';
         const editBtn = document.createElement('button'); editBtn.className = 'page-btn edit'; editBtn.dataset.id = c.id; editBtn.textContent = 'Modifica';
         const delBtn = document.createElement('button'); delBtn.className = 'page-btn del'; delBtn.dataset.id = c.id; delBtn.textContent = 'Elimina';
@@ -40,16 +41,18 @@ export async function initSettings(){
       const color = modal.querySelector('input[name="color"]');
       const plate = modal.querySelector('input[name="plate"]');
       const size = modal.querySelector('select[name="size"]');
+      const ins = modal.querySelector('input[name="insurance_expiry_iso"]');
       const res = await fetchJson(`/api/cars`);
       const car = res.find(x=>x.id==id);
       if(!car) return;
       name.value = car.name||''; color.value = car.color||'#ffffff'; plate.value = car.plate||''; size.value = car.size||'';
+      if(ins) ins.value = car.insurance_expiry_iso ? car.insurance_expiry_iso.slice(0,10) : '';
       const form = modal.querySelector('form'); form.setAttribute('data-edit-id', id);
       renderSwatches(color.value || '#ffffff');
       modal.classList.remove('hidden');
       const submit = async (e)=>{
         e.preventDefault();
-        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value };
+        const body = { name: (name.value||'').trim(), color: color.value, plate: (plate.value||'').toUpperCase(), size: size.value, insurance_expiry_iso: (ins && ins.value) ? ins.value : null };
         // require name, plate and size only (price optional, color may duplicate)
         const nameNorm = (body.name||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();
@@ -82,6 +85,7 @@ export async function initSettings(){
       form.querySelector('input[name="name"]').value = '';
       form.querySelector('input[name="color"]').value = '';
       form.querySelector('input[name="plate"]').value = '';
+    form.querySelector('input[name="insurance_expiry_iso"]').value = '';
       form.querySelector('select[name="size"]').value = 'media';
       renderSwatches('#ffffff');
       modal.classList.remove('hidden');
@@ -90,6 +94,7 @@ export async function initSettings(){
         const data = new FormData(form); const body = Object.fromEntries(data.entries());
         // ensure plate is uppercase
         body.plate = (body.plate||'').toUpperCase();
+        if(body.insurance_expiry_iso === '') body.insurance_expiry_iso = null;
         // require name, plate and size only; price optional, color may duplicate
         const nameNorm = (body.name||'').trim();
         const plateNorm = (body.plate||'').toUpperCase();

@@ -21,13 +21,21 @@ db.serialize(() => {
       color TEXT,
       size TEXT,
       price_per_day REAL,
-      plate TEXT
+      plate TEXT,
+      insurance_expiry_iso TEXT
     )`
   );
 
   // prevent creating duplicate cars by name or plate
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_name ON cars(name)`);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate)`);
+
+  // ensure insurance_expiry_iso column exists for older DBs
+  db.all("PRAGMA table_info(cars)", [], (err, crow) => {
+    if (err || !crow) return;
+    const ccols = crow.map(r => r.name);
+    if (!ccols.includes('insurance_expiry_iso')) db.run("ALTER TABLE cars ADD COLUMN insurance_expiry_iso TEXT");
+  });
 
   db.run(
     `CREATE TABLE IF NOT EXISTS bookings (
@@ -91,6 +99,14 @@ db.serialize(() => {
   );
   // ensure passcode names are unique to avoid duplicate default entries on race
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_passcodes_name ON passcodes(name)`);
+
+  // table to record when insurance expiry notifications were last sent per car
+  db.run(
+    `CREATE TABLE IF NOT EXISTS insurance_notifications (
+      car_id INTEGER PRIMARY KEY,
+      last_notified TEXT
+    )`
+  );
 });
 
 module.exports = db;
