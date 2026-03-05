@@ -1,4 +1,7 @@
-  // Tabella notifiche persistenti (booking e assicurazione)
+const db = new sqlite3.Database(DB_PATH);
+ 
+ 
+ // Tabella notifiche persistenti (booking e assicurazione)
   db.run(
     `CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,7 +24,6 @@ function ensureDbDir() {
 
 ensureDbDir();
 
-const db = new sqlite3.Database(DB_PATH);
 
 db.serialize(() => {
 
