@@ -8,7 +8,7 @@ const selfsigned = require('selfsigned');
 const db = require('./db');
 const ddns = require('./ddns');
 const { setupWebSocket, checkInsuranceExpiries } = require('./ws');
-const utils = require('./utils');
+const { hashPassword, verifyPassword, requireSession, createSession, overlaps, broadcast, sessions } = require('./utils');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
 let config = {};
@@ -69,8 +69,8 @@ const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.read
 const wss = setupWebSocket(server);
 
 // run insurance expiry check at startup and every 12 hours
-setTimeout(() => checkInsuranceExpiries(utils.broadcast), 1000 * 5);
-setInterval(() => checkInsuranceExpiries(utils.broadcast), 1000 * 60 * 60 * 12);
+setTimeout(() => checkInsuranceExpiries(broadcast), 1000 * 5);
+setInterval(() => checkInsuranceExpiries(broadcast), 1000 * 60 * 60 * 12);
 
 // start DDNS updater only if configured
 try {

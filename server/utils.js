@@ -22,12 +22,45 @@ function verifyPassword(password, stored) {
   }
 }
 
+// In-memory session store
+const sessions = new Map();
+
 function requireSession(req, res, next){
-  const sessions = require('./index').sessions;
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
   if (!auth || !sessions.has(auth)) return res.status(403).json({ error: 'forbidden: passcode required' });
   req.session = sessions.get(auth);
   next();
 }
 
-module.exports = { hashPassword, verifyPassword, requireSession };
+function createSession(passcodeRow) {
+  const token = crypto.randomBytes(18).toString('hex');
+  sessions.set(token, { id: passcodeRow.id, name: passcodeRow.name, created: Date.now() });
+  setTimeout(() => sessions.delete(token), 24 * 60 * 60 * 1000);
+  return token;
+}
+
+function overlaps(car_id, start_iso, end_iso, cb) {
+  const db = require('./db');
+  db.get(
+    `SELECT id FROM bookings WHERE car_id = ? AND NOT (end_iso <= ? OR start_iso >= ?) LIMIT 1`,
+    [car_id, start_iso, end_iso],
+    (err, row) => {
+      if (err) return cb(err);
+      cb(null, !!row);
+    }
+  );
+}
+
+let broadcast = () => {};
+function setBroadcast(fn) { broadcast = fn; }
+
+module.exports = {
+  hashPassword,
+  verifyPassword,
+  requireSession,
+  createSession,
+  overlaps,
+  sessions,
+  setBroadcast,
+  broadcast: (...args) => broadcast(...args)
+};
