@@ -1,4 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const db = require('./db');
+const { requireSession } = require('./auth');
 // Funzione per controllare sovrapposizioni di prenotazioni
+
+
 function overlaps(car_id, start_iso, end_iso, cb) {
   db.get(
     'SELECT id FROM bookings WHERE car_id = ? AND NOT (end_iso <= ? OR start_iso >= ?) LIMIT 1',
@@ -42,10 +48,7 @@ router.post('/api/bookings', requireSession, (req, res) => {
     }
   });
 });
-const express = require('express');
-const router = express.Router();
-const db = require('./db');
-const { requireSession } = require('./auth');
+
 // Health
 router.get('/health', (req, res) => {
   db.get('SELECT 1 as ok', [], (err) => {
