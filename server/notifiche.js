@@ -132,5 +132,7 @@ module.exports = {
   createBroadcaster,
   setupInsuranceNotificationEndpoints,
   setupInsuranceWsNotifications,
-  checkInsuranceExpiries
+  checkInsuranceExpiries,
+  setupNotificationDismissEndpoint,
+  setupNotificationListEndpoint
 };
