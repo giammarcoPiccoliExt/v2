@@ -9,6 +9,7 @@ const WebSocket = require('ws');
 
 const db = require('./db');
 const ddns = require('./ddns');
+const notifiche = require('./notifiche');
 const crypto = require('crypto');
 const { requireSession, createSession, getSessions } = require('./auth');
 
@@ -98,102 +99,20 @@ if (!usePlainHttp) {
 
 // WebSocket server for push notifications
 const wss = new WebSocket.Server({ server });
+const broadcast = notifiche.createBroadcaster(wss, db);
 
-function broadcast(obj) {
-  const msg = JSON.stringify(obj);
-  wss.clients.forEach((c) => {
-    if (c.readyState === WebSocket.OPEN) c.send(msg);
-  });
+
+// Notifiche assicurazione: endpoint, websocket e controllo periodico
+// Notifiche assicurazione: endpoint, websocket e controllo periodico
+notifiche.setupInsuranceNotificationEndpoints(app, db, broadcast);
+notifiche.setupInsuranceWsNotifications(wss, db);
+notifiche.setupNotificationDismissEndpoint(app, db);
+notifiche.setupNotificationListEndpoint(app, db);
+function periodicInsuranceCheck() {
+  notifiche.checkInsuranceExpiries(db, broadcast);
 }
-
-// Insurance expiry reminder: check cars daily and notify when expiry within 10 days.
-
-// API per trigger manuale da settings (definita una sola volta)
-app.post('/api/check-insurance', (req, res) => {
-  db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
-    if(err || !rows) return res.status(500).json({error:'db'});
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const expiring = [];
-    rows.forEach(car=>{
-      try{
-        const iso = car.insurance_expiry_iso;
-        if(!iso) return;
-        const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
-        if(isNaN(exp)) return;
-        const diffMs = exp.getTime() - today.getTime();
-        const daysLeft = Math.ceil(diffMs / 86400000);
-        if(daysLeft <= 10 && daysLeft >= 0){
-          expiring.push({ plate: car.plate, modello: car.modello, descrizione: car.descrizione, days_left: daysLeft });
-          // invia notifica a tutti
-          broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
-        }
-      }catch(e){}
-    });
-    res.json({ expiring });
-  });
-});
-
-// Invio notifiche attive a ogni client che si connette (definito una sola volta)
-wss.on('connection', (ws) => {
-  const sql = `SELECT cars.*, CAST((julianday(cars.insurance_expiry_iso) - julianday(date())) AS INTEGER) AS days_left
-              FROM cars
-              JOIN insurance_notifications ON cars.id = insurance_notifications.car_id
-              WHERE insurance_notifications.active=1`;
-  db.all(sql, [], (err, rows) => {
-    if(!err && rows && rows.length){
-      rows.forEach(car => {
-        ws.send(JSON.stringify({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: car.days_left }));
-      });
-    }
-  });
-});
-
-async function checkInsuranceExpiries(){
-  try{
-    db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
-      if(err || !rows) return;
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      rows.forEach(car=>{
-        try{
-          const iso = car.insurance_expiry_iso;
-          if(!iso) return;
-          // accept date formats like YYYY-MM-DD or full ISO
-          const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
-          if(isNaN(exp)) return;
-          const diffMs = exp.getTime() - today.getTime();
-          const daysLeft = Math.ceil(diffMs / 86400000);
-          if(daysLeft <= 10 && daysLeft >= 0){
-            // check last notification
-            db.get('SELECT last_notified FROM insurance_notifications WHERE car_id = ?', [car.id], (err2, row2)=>{
-              const nowIso = new Date().toISOString();
-              let shouldNotify = false;
-              if(err2) shouldNotify = true;
-              else if(!row2 || !row2.last_notified) shouldNotify = true;
-              else {
-                const last = new Date(row2.last_notified);
-                if(isNaN(last)) shouldNotify = true;
-                else {
-                  const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
-                  if(diffDays >= 2) shouldNotify = true;
-                }
-              }
-              if(shouldNotify){
-                broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
-                db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified,active) VALUES (?,?,1)', [car.id, nowIso], function(e){});
-              }
-            });
-          }
-        }catch(e){}
-      });
-    });
-  }catch(e){ console.error('insurance check error', e); }
-}
-
-// run at startup and every 12 hours
-setTimeout(checkInsuranceExpiries, 1000 * 5);
-setInterval(checkInsuranceExpiries, 1000 * 60 * 60 * 12);
+setTimeout(periodicInsuranceCheck, 1000 * 5);
+setInterval(periodicInsuranceCheck, 1000 * 60 * 60 * 12);
 
 // simple in-memory session store for passcode logins is now in auth.js
 
@@ -470,57 +389,13 @@ app.post('/internal/notify', express.json(), (req, res) => {
   }
 });
 
-// --- cert renewal: regenerate if older than 90 days ---
-function setupCertRenewal(checkDays = 90) {
-  const ms = 24 * 60 * 60 * 1000;
-  async function checkAndRenew() {
-    try {
-      const stat = fs.statSync(keyPath);
-      const ageDays = (Date.now() - stat.mtimeMs) / ms;
-      if (ageDays > checkDays) {
-        console.log('Regenerating self-signed certs (age', Math.floor(ageDays), 'days)');
-        const attrs = [{ name: 'commonName', value: 'localhost' }];
-        const pems = selfsigned.generate(attrs, { days: 3650 });
-        fs.writeFileSync(keyPath, pems.private);
-        fs.writeFileSync(certPath, pems.cert);
-      }
-    } catch (e) {
-      console.error('Cert renewal check error', e.message);
-    }
-  }
-  checkAndRenew();
-  setInterval(checkAndRenew, 24 * 60 * 60 * 1000); // check daily
-}
-setupCertRenewal(90);
+// --- cert renewal and backup utilities ---
+const { setupCertRenewal, setupBackups } = require('./utils');
+setupCertRenewal(keyPath, certPath, 90);
 
-// --- DB backups every 6 hours ---
-function setupBackups(intervalHours = 6) {
-  const backupsDir = path.join(__dirname, '..', 'backups');
-  if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
-  async function doBackup() {
-    try {
-      const src = path.join(__dirname, '..', 'data', 'app.db');
-      if (!fs.existsSync(src)) return;
-      const dest = path.join(backupsDir, `app-${new Date().toISOString().replace(/[:.]/g,'-')}.db`);
-      fs.copyFileSync(src, dest);
-      console.log('DB backup saved to', dest);
-      // enforce max 5 backups: remove oldest beyond 5
-      try{
-        const files = fs.readdirSync(backupsDir).filter(f=>f.startsWith('app-') && f.endsWith('.db'))
-          .map(f=>({ name:f, path:path.join(backupsDir,f), mtime: fs.statSync(path.join(backupsDir,f)).mtimeMs }))
-          .sort((a,b)=>b.mtime - a.mtime);
-        const keep = 5;
-        if(files.length > keep){
-          const toRemove = files.slice(keep);
-          toRemove.forEach(it=>{ try{ fs.unlinkSync(it.path); console.log('Removed old backup', it.path); }catch(e){ console.error('Failed remove old backup', it.path, e.message); } });
-        }
-      }catch(e){ console.error('Prune backups error', e.message); }
-    } catch (e) { console.error('Backup error', e.message); }
-  }
-  doBackup();
-  setInterval(doBackup, intervalHours * 60 * 60 * 1000);
-}
-setupBackups(6);
+const dataDir = path.join(__dirname, '..', 'data');
+const backupsDir = path.join(__dirname, '..', 'backups');
+setupBackups(dataDir, backupsDir, 6);
 
 // ensure a default passcode exists on first run (password: 'admin')
 // (defined earlier and invoked; duplicate definition removed)

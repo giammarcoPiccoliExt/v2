@@ -1,3 +1,13 @@
+  // Tabella notifiche persistenti (booking e assicurazione)
+  db.run(
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL, -- 'booking' | 'insurance'
+      payload TEXT NOT NULL, -- JSON.stringify(obj)
+      created_at TEXT NOT NULL,
+      dismissed INTEGER DEFAULT 0
+    )`
+  );
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 

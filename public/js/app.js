@@ -1,3 +1,42 @@
+// Polling notifiche persistenti ogni 30 minuti
+import { fetchJson } from './utils.js';
+
+function showPersistentNotification(obj) {
+  // Mostra una toast persistente con bottone di chiusura
+  let el = document.getElementById('notif_'+obj.notification_id);
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'notif_'+obj.notification_id;
+    el.className = 'toast persistent-toast';
+    el.innerHTML = `<span>${obj.message || obj.title || obj.type || 'Notifica'}</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = 'Chiudi';
+    btn.className = 'page-btn';
+    btn.addEventListener('click', async ()=>{
+      try{
+        await fetchJson(`/api/notifications/${obj.notification_id}/dismiss`, { method:'POST' });
+        el.remove();
+      }catch(e){ alert('Errore chiusura notifica'); }
+    });
+    el.appendChild(btn);
+    document.body.appendChild(el);
+  }
+}
+
+(function persistentNotificationsPoll(){
+  async function poll(){
+    try{
+      const notifs = await fetchJson('/api/notifications');
+      if(Array.isArray(notifs)){
+        notifs.forEach(obj=>{
+          if(obj && obj.notification_id) showPersistentNotification(obj);
+        });
+      }
+    }catch(e){}
+  }
+  poll();
+  setInterval(poll, 30 * 60 * 1000); // ogni 30 minuti
+})();
 import { fetchText } from './utils.js';
 
 const partials = ['home','bookings','summary','settings','carModal','bookingModal','dayBookingsModal'];
