@@ -1,5 +1,14 @@
+ const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
 const db = new sqlite3.Database(DB_PATH);
- 
+
+function ensureDbDir() {
+  const fs = require('fs');
+  const dir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
  
  // Tabella notifiche persistenti (booking e assicurazione)
   db.run(
@@ -11,16 +20,7 @@ const db = new sqlite3.Database(DB_PATH);
       dismissed INTEGER DEFAULT 0
     )`
   );
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
-
-function ensureDbDir() {
-  const fs = require('fs');
-  const dir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
 
 ensureDbDir();
 
