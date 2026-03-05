@@ -339,7 +339,7 @@ export async function initHome(){
       async function dismissInsuranceNotification() {
         try {
           const notifs = await fetchJson('/api/notifications');
-          const notif = notifs.find(n => n.type === 'insurance' && n.car && n.car.id == car.id);
+          const notif = notifs.find(n => n.type === 'insurance_alert' && n.car && n.car.id == car.id);
           if(notif && notif.notification_id) {
             console.log('[DEBUG] Dismissing insurance notification id:', notif.notification_id);
             const resp = await fetchRaw(`/api/notifications/${notif.notification_id}/dismiss`, { method: 'POST' });
@@ -364,7 +364,7 @@ setInterval(async ()=>{
   try {
     const notifs = await fetchJson('/api/notifications');
     // Mostra solo insurance attive (non archiviate)
-    (notifs||[]).filter(n => n.type === 'insurance' && n.car && n.car.id).forEach(n => {
+    (notifs||[]).filter(n => n.type === 'insurance_alert' && n.car && n.car.id).forEach(n => {
       // Evita duplicati
       showInsuranceBanner(n.car, n.days_left);
     });
