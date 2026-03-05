@@ -468,7 +468,145 @@ setInterval(async ()=>{
   scrollRightBtn?.addEventListener('click', ()=>{ calendarWrapper?.scrollBy({ left: 840, behavior:'smooth' }); });
 
   // New booking modal flow
-  newBookingBtn?.addEventListener('click', async ()=>{
+  // Helper to set up booking modal (for both new and edit)
+  async function setupBookingModal(editBooking = null) {
+    // open modal and populate car list grouped by size
+    const cars = await fetchCars();
+    const select = document.querySelector('#bookingModal select[name="car_id"]');
+    select.innerHTML = '';
+    const groups = {};
+    cars.forEach(c=>{ groups[c.size || 'Unknown'] = groups[c.size || 'Unknown'] || []; groups[c.size || 'Unknown'].push(c); });
+    Object.keys(groups).forEach(size=>{
+      const optg = document.createElement('optgroup'); optg.label = size;
+      groups[size].forEach(c=>{
+        let label = (c.modello || '');
+        if(c.descrizione) label += ' - ' + c.descrizione;
+        if(c.plate) label += ' / ' + c.plate;
+        const o = document.createElement('option'); o.value = c.id; o.textContent = label; optg.appendChild(o);
+      });
+      select.appendChild(optg);
+    });
+
+    const startInput = document.querySelector('#bookingModal input[name="start_date"]');
+    const endInput = document.querySelector('#bookingModal input[name="end_date"]');
+    const warning = document.getElementById('overlapWarning');
+
+    // set today's date as placeholder and default if empty
+    try{
+      const today = (function(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+      if(startInput){ startInput.placeholder = today; if(!startInput.value) startInput.value = today; }
+      if(endInput){ endInput.placeholder = today; if(!endInput.value) endInput.value = today; }
+    }catch(e){}
+
+    // If editing, set values and editId
+    const bookingModal = document.getElementById('bookingModal');
+    if(editBooking) {
+      bookingModal.dataset.editId = editBooking.id;
+      // Set car, dates, client name
+      select.value = editBooking.car_id;
+      startInput.value = (editBooking.start_iso||'').slice(0,10);
+      endInput.value = (editBooking.end_iso||'').slice(0,10);
+      const clientInput = document.querySelector('#bookingModal input[name="client_name"]');
+      if(clientInput) clientInput.value = editBooking.client_name || '';
+    } else {
+      delete bookingModal.dataset.editId;
+      // Optionally clear fields for new booking
+      const clientInput = document.querySelector('#bookingModal input[name="client_name"]');
+      if(clientInput) clientInput.value = '';
+    }
+
+    // Attach checkOverlap to changes
+    function checkOverlap(){
+      warning.classList.add('hidden');
+      const carId = select.value; const s = startInput.value; const e = endInput.value; if(!carId || !s || !e) return;
+      const start_iso = s + 'T00:00:00Z'; const end_iso = e + 'T23:59:59Z';
+      const editModal = document.getElementById('bookingModal');
+      const exclude_id = editModal?.dataset?.editId ? parseInt(editModal.dataset.editId) : null;
+      const body = { car_id: parseInt(carId), start_iso, end_iso };
+      if(exclude_id) body.exclude_id = exclude_id;
+      fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+        .then(json=>{
+          if(json.overlap){
+            const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+            if(overlapping.length){
+              warning.innerHTML = '';
+              const title = document.createElement('div'); title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:'; title.style.fontWeight = '600'; title.style.marginBottom = '6px';
+              warning.appendChild(title);
+              overlapping.forEach(r => {
+                const row = document.createElement('div'); row.className = 'overlap-row'; row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='8px'; row.style.marginBottom='6px';
+                  const txt = document.createElement('div');
+                  try{
+                    const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
+                    const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
+                    txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
+                  }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
+                row.appendChild(txt);
+                warning.appendChild(row);
+              });
+              warning.classList.remove('hidden');
+            } else {
+              warning.classList.remove('hidden');
+              warning.textContent = 'Conflitto: già prenotato.';
+            }
+          } else {
+            warning.classList.add('hidden');
+            warning.innerHTML = '';
+          }
+        }).catch(()=>{});
+    }
+
+    select.addEventListener('change', checkOverlap);
+    startInput.addEventListener('change', checkOverlap);
+    endInput.addEventListener('change', checkOverlap);
+
+    // Trigger check immediately if editing
+    if(editBooking) checkOverlap();
+
+    document.getElementById('bookingModal').classList.remove('hidden');
+
+    // save handler
+    const form = document.getElementById('bookingModalForm');
+    const onSubmit = async (e)=>{
+      e.preventDefault();
+      const data = new FormData(form); const body = Object.fromEntries(data.entries());
+      if(!body.car_id || !body.start_date || !body.end_date || !(body.client_name && body.client_name.trim())){
+        alert('Compila tutti i campi obbligatori: auto, data inizio, data fine e nome cliente.');
+        return;
+      }
+      const sDate = new Date(body.start_date);
+      const eDate = new Date(body.end_date);
+      if(isNaN(sDate) || isNaN(eDate) || sDate > eDate){ alert('Date non valide: assicurati che la data di inizio sia <= data di fine.'); return; }
+      const start_iso = body.start_date + 'T00:00:00Z'; const end_iso = body.end_date + 'T23:59:59Z';
+      const car_id = parseInt(body.car_id);
+      const bm = document.getElementById('bookingModal');
+      const excludeId = bm?.dataset?.editId ? parseInt(bm.dataset.editId) : null;
+      const chkBody = { car_id, start_iso, end_iso };
+      if(excludeId) chkBody.exclude_id = excludeId;
+      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
+      if(chk.overlap){
+        checkOverlap();
+        return;
+      }
+      const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
+      let res;
+      if(editBooking) {
+        res = await fetchRaw(`/api/bookings/${editBooking.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+      } else {
+        res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+      }
+      if(res.status===403) { alert('Non autorizzato (passcode richiesto)'); return; }
+      if(!res.ok) { alert('Salvataggio fallito'); return; }
+      document.getElementById('bookingModal').classList.add('hidden');
+      form.removeEventListener('submit', onSubmit);
+      refresh();
+    };
+    form.addEventListener('submit', onSubmit);
+    const bookingCancelBtn = document.getElementById('bookingCancelBtn');
+    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
+  }
+
+  // New booking button opens modal in new mode
+  newBookingBtn?.addEventListener('click', ()=>setupBookingModal());
     // open modal and populate car list grouped by size
     const cars = await fetchCars();
     const select = document.querySelector('#bookingModal select[name="car_id"]');
@@ -760,6 +898,19 @@ setInterval(async ()=>{
   // ensure new-booking clears any edit marker
   const bookingModalEl = document.getElementById('bookingModal');
   if(bookingModalEl){ bookingModalEl.addEventListener('show', ()=>{ delete bookingModalEl.dataset.editId; }); }
+
+  // Listen for edit booking event to open modal in edit mode
+  window.addEventListener('openEditBooking', async (ev) => {
+    const id = ev.detail?.id;
+    if(!id) return;
+    // Fetch booking details (assuming bookings are already loaded, or fetch from API if needed)
+    let booking = null;
+    try {
+      const bookings = await fetchBookings();
+      booking = bookings.find(b => b.id == id);
+    } catch(e) {}
+    if(booking) setupBookingModal(booking);
+  });
 
   refresh();
 }
