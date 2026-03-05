@@ -133,14 +133,6 @@ db.serialize(() => {
   // ensure passcode names are unique to avoid duplicate default entries on race
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_passcodes_name ON passcodes(name)`);
 
-  // table to record when insurance expiry notifications were last sent per car
-  db.run(
-    `CREATE TABLE IF NOT EXISTS insurance_notifications (
-      car_id INTEGER PRIMARY KEY,
-      last_notified TEXT,
-      active INTEGER DEFAULT 1
-    )`
-  );
 });
 
 module.exports = db;

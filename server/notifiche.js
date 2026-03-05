@@ -116,24 +116,7 @@ async function checkInsuranceExpiries(db, broadcast) {
           const diffMs = exp.getTime() - today.getTime();
           const daysLeft = Math.ceil(diffMs / 86400000);
           if(daysLeft <= 10 && daysLeft >= 0){
-            db.get('SELECT last_notified FROM insurance_notifications WHERE car_id = ?', [car.id], (err2, row2)=>{
-              const nowIso = new Date().toISOString();
-              let shouldNotify = false;
-              if(err2) shouldNotify = true;
-              else if(!row2 || !row2.last_notified) shouldNotify = true;
-              else {
-                const last = new Date(row2.last_notified);
-                if(isNaN(last)) shouldNotify = true;
-                else {
-                  const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
-                  if(diffDays >= 2) shouldNotify = true;
-                }
-              }
-              if(shouldNotify){
-                broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
-                db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified,active) VALUES (?,?,1)', [car.id, nowIso], function(e){});
-              }
-            });
+            broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
           }
         }catch(e){}
       });
