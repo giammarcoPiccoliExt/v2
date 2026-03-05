@@ -9,8 +9,7 @@ export async function initSettings(){
           const res = await fetch('/api/check-insurance', {method:'POST'});
           const json = await res.json();
           if(json && json.expiring && json.expiring.length){
-            // Notifica solo su home, non su settings
-            // window.dispatchEvent(new CustomEvent('insurance:expiring', { detail: json.expiring }));
+            window.dispatchEvent(new CustomEvent('insurance:expiring', { detail: json.expiring }));
           }
         } catch(e){
           alert('Errore durante il controllo scadenza assicurazione');
