@@ -106,32 +106,49 @@ function broadcast(obj) {
 }
 
 // Insurance expiry reminder: check cars daily and notify when expiry within 10 days.
-async function checkInsuranceExpiries(){
-  // API per trigger manuale da settings
-  app.post('/api/check-insurance', (req, res) => {
-    db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
-      if(err || !rows) return res.status(500).json({error:'db'});
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const expiring = [];
-      rows.forEach(car=>{
-        try{
-          const iso = car.insurance_expiry_iso;
-          if(!iso) return;
-          const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
-          if(isNaN(exp)) return;
-          const diffMs = exp.getTime() - today.getTime();
-          const daysLeft = Math.ceil(diffMs / 86400000);
-          if(daysLeft <= 10 && daysLeft >= 0){
-            expiring.push({ plate: car.plate, modello: car.modello, descrizione: car.descrizione, days_left: daysLeft });
-            // invia notifica a tutti
-            broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
-          }
-        }catch(e){}
-      });
-      res.json({ expiring });
+
+// API per trigger manuale da settings (definita una sola volta)
+app.post('/api/check-insurance', (req, res) => {
+  db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
+    if(err || !rows) return res.status(500).json({error:'db'});
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const expiring = [];
+    rows.forEach(car=>{
+      try{
+        const iso = car.insurance_expiry_iso;
+        if(!iso) return;
+        const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
+        if(isNaN(exp)) return;
+        const diffMs = exp.getTime() - today.getTime();
+        const daysLeft = Math.ceil(diffMs / 86400000);
+        if(daysLeft <= 10 && daysLeft >= 0){
+          expiring.push({ plate: car.plate, modello: car.modello, descrizione: car.descrizione, days_left: daysLeft });
+          // invia notifica a tutti
+          broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
+        }
+      }catch(e){}
     });
+    res.json({ expiring });
   });
+});
+
+// Invio notifiche attive a ogni client che si connette (definito una sola volta)
+wss.on('connection', (ws) => {
+  const sql = `SELECT cars.*, CAST((julianday(cars.insurance_expiry_iso) - julianday(date())) AS INTEGER) AS days_left
+              FROM cars
+              JOIN insurance_notifications ON cars.id = insurance_notifications.car_id
+              WHERE insurance_notifications.active=1`;
+  db.all(sql, [], (err, rows) => {
+    if(!err && rows && rows.length){
+      rows.forEach(car => {
+        ws.send(JSON.stringify({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: car.days_left }));
+      });
+    }
+  });
+});
+
+async function checkInsuranceExpiries(){
   try{
     db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
       if(err || !rows) return;
@@ -165,20 +182,7 @@ async function checkInsuranceExpiries(){
                 broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
                 db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified,active) VALUES (?,?,1)', [car.id, nowIso], function(e){});
               }
-// Invio notifiche attive a ogni client che si connette
-wss.on('connection', (ws) => {
-  const sql = `SELECT cars.*, CAST((julianday(cars.insurance_expiry_iso) - julianday(date())) AS INTEGER) AS days_left
-              FROM cars
-              JOIN insurance_notifications ON cars.id = insurance_notifications.car_id
-              WHERE insurance_notifications.active=1`;
-  db.all(sql, [], (err, rows) => {
-    if(!err && rows && rows.length){
-      rows.forEach(car => {
-        ws.send(JSON.stringify({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: car.days_left }));
-      });
-    }
-  });
-});
+            });
           }
         }catch(e){}
       });
