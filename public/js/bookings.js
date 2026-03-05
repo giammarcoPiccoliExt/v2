@@ -345,7 +345,7 @@ export function initBookings(){
       const overlay = document.getElementById('editOverlayModal'); if(!overlay) return;
       const form = document.getElementById('editOverlayForm');
       // populate client at top
-      const clientInputOverlay = form.querySelector('input[name="client_name"]'); if(clientInputOverlay){ clientInputOverlay.value = bk.client_name || ''; clientInputOverlay.placeholder = 'Cliente'; }
+      const clientInputOverlay = form.querySelector('input[name="client_name"]'); if(clientInputOverlay){ clientInputOverlay.value = bk.client_name || ''; clientInputOverlay.placeholder = 'Cliente'; clientInputOverlay.style.display = ''; }
       const overlayTitleEl = document.getElementById('editOverlayTitle'); if(overlayTitleEl) overlayTitleEl.textContent = bk.client_name || 'Cliente';
       form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
       form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
@@ -357,6 +357,59 @@ export function initBookings(){
         if(c.plate) label += ' / ' + c.plate;
         const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
       });
+      // --- AGGIUNTA: controllo conflitti in tempo reale anche in overlay ---
+      function checkEditOverlayOverlap() {
+        const carId = sel.value;
+        const s = form.querySelector('input[name="start_date"]').value;
+        const e = form.querySelector('input[name="end_date"]').value;
+        if(!carId || !s || !e) return;
+        const start_iso = s + 'T00:00:00Z';
+        const end_iso = e + 'T23:59:59Z';
+        const body = { car_id: parseInt(carId), start_iso, end_iso, exclude_id: bk.id };
+        fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+          .then(json=>{
+            const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+            let warning = overlay.querySelector('.overlap-warning');
+            if(!warning) {
+              warning = document.createElement('div');
+              warning.className = 'overlap-warning';
+              overlay.querySelector('.modal-content')?.insertBefore(warning, form);
+            }
+            warning.innerHTML = '';
+            if(overlapping.length){
+              const title = document.createElement('div');
+              title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:';
+              title.style.fontWeight = '600';
+              title.style.marginBottom = '6px';
+              warning.appendChild(title);
+              overlapping.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'overlap-row';
+                row.style.display='flex';
+                row.style.justifyContent='space-between';
+                row.style.alignItems='center';
+                row.style.gap='8px';
+                row.style.marginBottom='6px';
+                const txt = document.createElement('div');
+                try{
+                  const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
+                  const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
+                  txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
+                }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
+                row.appendChild(txt);
+                warning.appendChild(row);
+              });
+              warning.classList.remove('hidden');
+            } else {
+              warning.classList.add('hidden');
+              warning.innerHTML = '';
+            }
+          }).catch(()=>{});
+      }
+      sel.addEventListener('change', checkEditOverlayOverlap);
+      form.querySelector('input[name="start_date"]').addEventListener('change', checkEditOverlayOverlap);
+      form.querySelector('input[name="end_date"]').addEventListener('change', checkEditOverlayOverlap);
+      // --- FINE AGGIUNTA ---
       // submit handler for overlay
       const onSubmitOverlay = async (e)=>{
         e.preventDefault();
@@ -378,8 +431,8 @@ export function initBookings(){
     // fallback: use the existing booking modal for editing when overlay not appropriate
     if(!modal) return;
     const form = document.getElementById('bookingModalForm');
-    // set booking modal title to client name (not "Nuova Prenotazione")
-    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = 'Modifica' || 'Modifica';
+    // set booking modal title a "Modifica" e mostra sempre il campo cliente
+    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = 'Modifica';
     form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
     const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
@@ -390,8 +443,62 @@ export function initBookings(){
       if(c.plate) label += ' / ' + c.plate;
       const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
     });
-    form.querySelector('input[name="client_name"]').value = bk.client_name || '';
+    const clientInput = form.querySelector('input[name="client_name"]');
+    if(clientInput) { clientInput.value = bk.client_name || ''; clientInput.placeholder = 'Cliente'; clientInput.style.display = ''; }
     form.querySelector('input[name="description"]').value = bk.description || '';
+    // --- AGGIUNTA: controllo conflitti in tempo reale anche in fallback ---
+    function checkEditFallbackOverlap() {
+      const carId = sel.value;
+      const s = form.querySelector('input[name="start_date"]').value;
+      const e = form.querySelector('input[name="end_date"]').value;
+      if(!carId || !s || !e) return;
+      const start_iso = s + 'T00:00:00Z';
+      const end_iso = e + 'T23:59:59Z';
+      const body = { car_id: parseInt(carId), start_iso, end_iso, exclude_id: bk.id };
+      fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+        .then(json=>{
+          const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+          let warning = document.getElementById('overlapWarning');
+          if(!warning) {
+            warning = document.createElement('div');
+            warning.id = 'overlapWarning';
+            form.insertBefore(warning, form.firstChild);
+          }
+          warning.innerHTML = '';
+          if(overlapping.length){
+            const title = document.createElement('div');
+            title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:';
+            title.style.fontWeight = '600';
+            title.style.marginBottom = '6px';
+            warning.appendChild(title);
+            overlapping.forEach(r => {
+              const row = document.createElement('div');
+              row.className = 'overlap-row';
+              row.style.display='flex';
+              row.style.justifyContent='space-between';
+              row.style.alignItems='center';
+              row.style.gap='8px';
+              row.style.marginBottom='6px';
+              const txt = document.createElement('div');
+              try{
+                const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
+                const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
+                txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
+              }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
+              row.appendChild(txt);
+              warning.appendChild(row);
+            });
+            warning.classList.remove('hidden');
+          } else {
+            warning.classList.add('hidden');
+            warning.innerHTML = '';
+          }
+        }).catch(()=>{});
+    }
+    sel.addEventListener('change', checkEditFallbackOverlap);
+    form.querySelector('input[name="start_date"]').addEventListener('change', checkEditFallbackOverlap);
+    form.querySelector('input[name="end_date"]').addEventListener('change', checkEditFallbackOverlap);
+    // --- FINE AGGIUNTA ---
     // set submit handler to PUT
     const onSubmit = async (e)=>{
       e.preventDefault();
