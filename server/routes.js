@@ -153,8 +153,8 @@ router.put('/api/cars/:id', requireSession, (req, res) => {
         [newModello, newDescrizione, newColor, newSize, newPrice || null, newPlate, newInsurance || null, id],
         function (err) {
           if (err) return res.status(500).json({ error: err.message });
-          // Elimina notifiche persistenti di tipo insurance per questa auto
-          db.run('DELETE FROM notifications WHERE type = ? AND json_extract(payload, "$.car.id") = ?', ['insurance', id], function (e) {});
+          // Segna come dismesse tutte le notifiche insurance per questa auto
+          db.run('UPDATE notifications SET dismissed=1 WHERE type = ? AND json_extract(payload, "$.car.id") = ?', ['insurance', id], function (e) {});
           db.run('DELETE FROM insurance_notifications WHERE car_id = ?', [id], function (e) {});
           res.json({ changed: this.changes });
         }
