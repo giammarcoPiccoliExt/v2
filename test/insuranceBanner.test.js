@@ -67,6 +67,12 @@ async function updateInsurance(carId, newDate) {
     body: JSON.stringify({ insurance_expiry_iso: newDate })
   });
   assert(res.ok, 'PUT /api/cars/:id failed');
+  // Forza la generazione della notifica persistente
+  const res2 = await fetch(BASE + '/api/check-insurance', {
+    method: 'POST',
+    headers: AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}
+  });
+  assert(res2.ok, 'POST /api/check-insurance failed');
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
