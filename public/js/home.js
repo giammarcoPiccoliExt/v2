@@ -368,7 +368,8 @@ export async function initHome(){
       btnWrap.appendChild(insureBtn); btnWrap.appendChild(close);
       banner.appendChild(btnWrap);
       hdr.insertAdjacentElement('afterend', banner);
-
+      // Il banner rimane finché non viene chiuso manualmente
+    }catch(e){}
       // modal creation function (reuse if exists)
       function openInsuranceModal(){
         let modal = document.getElementById('insuranceModal');
