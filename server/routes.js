@@ -1,3 +1,28 @@
+// Modifica una prenotazione (con controllo overlap e mantenimento client_name/creator_name)
+router.put('/api/bookings/:id', requireSession, (req, res) => {
+  const id = req.params.id;
+  const { car_id, start_iso, end_iso, title, client_name, description } = req.body;
+  if (!car_id || !start_iso || !end_iso) return res.status(400).json({ error: 'missing fields' });
+  // check overlap escludendo questa prenotazione
+  db.get('SELECT id FROM bookings WHERE car_id = ? AND id != ? AND NOT (end_iso <= ? OR start_iso >= ?) LIMIT 1', [car_id, id, start_iso, end_iso], (err, overlapRow) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (overlapRow) return res.status(409).json({ error: 'overlap' });
+    // recupera i dati esistenti per mantenere client_name e creator_name se non forniti
+    db.get('SELECT * FROM bookings WHERE id=?', [id], (err, oldRow) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!oldRow) return res.status(404).json({ error: 'not found' });
+      const newClient = (typeof client_name !== 'undefined') ? client_name : oldRow.client_name;
+      const newCreator = oldRow.creator_name; // creator_name non modificabile
+      db.run('UPDATE bookings SET car_id=?, start_iso=?, end_iso=?, title=?, client_name=?, creator_name=?, description=? WHERE id=?',
+        [car_id, start_iso, end_iso, title || oldRow.title, newClient, newCreator, description || oldRow.description, id],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ changed: this.changes });
+        }
+      );
+    });
+  });
+});
 const express = require('express');
 const router = express.Router();
 const db = require('./db');
