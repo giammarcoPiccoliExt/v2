@@ -1,19 +1,39 @@
-// Test automatico end-to-end per assicurazione: forza la generazione della notifica, aggiorna la data e verifica la rimozione
+// Test automatico end-to-end per assicurazione: login, forza la generazione della notifica, aggiorna la data e verifica la rimozione
 // Da lanciare con: node test/insuranceBanner.test.js
 
 import fetch from 'node-fetch';
 import assert from 'assert';
 
 const BASE = 'http://localhost:3001';
+const PASSWORD = process.env.PASSCODE_PASSWORD || 'inserisci_password_valida'; // <-- Sostituisci o usa variabile env
+
+let AUTH_TOKEN = null;
+
+async function login() {
+  const res = await fetch(BASE + '/api/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password: PASSWORD })
+  });
+  assert(res.ok, 'Login fallito');
+  const data = await res.json();
+  AUTH_TOKEN = data.token;
+  assert(AUTH_TOKEN, 'Token non ricevuto');
+  console.log('Login OK, utente:', data.name);
+}
 
 async function getNotifications() {
-  const res = await fetch(BASE + '/api/notifications');
+  const res = await fetch(BASE + '/api/notifications', {
+    headers: AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}
+  });
   assert(res.ok, 'GET /api/notifications failed');
   return res.json();
 }
 
 async function getCars() {
-  const res = await fetch(BASE + '/api/cars');
+  const res = await fetch(BASE + '/api/cars', {
+    headers: AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}
+  });
   assert(res.ok, 'GET /api/cars failed');
   return res.json();
 }
@@ -21,7 +41,10 @@ async function getCars() {
 async function updateInsurance(carId, newDate) {
   const res = await fetch(BASE + `/api/cars/${carId}`, {
     method: 'PUT',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {})
+    },
     body: JSON.stringify({ insurance_expiry_iso: newDate })
   });
   assert(res.ok, 'PUT /api/cars/:id failed');
@@ -30,6 +53,7 @@ async function updateInsurance(carId, newDate) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 (async function testInsuranceBannerFlow() {
+  await login();
   // 1. Trova un'auto qualsiasi
   const cars = await getCars();
   assert(cars.length > 0, 'Nessuna auto trovata');
