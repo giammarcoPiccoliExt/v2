@@ -327,6 +327,7 @@ app.post('/api/bookings', (req, res) => {
   // Determine auth: either passcode session (Bearer token) or approved device
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
   let session = null;
+  const sessions = getSessions();
   if (auth && sessions.has(auth)) session = sessions.get(auth);
 
   function doInsert(creator_name_val) {
@@ -372,6 +373,7 @@ app.put('/api/bookings/:id', (req, res) => {
   const id = req.params.id;
   const { car_id, start_iso, end_iso, title, client_name, description } = req.body;
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
+  const sessions = getSessions();
   if (!auth || !sessions.has(auth)) return res.status(403).json({ error: 'forbidden: passcode required' });
   // check overlap excluding this booking id
   db.get('SELECT id FROM bookings WHERE car_id = ? AND id != ? AND NOT (end_iso <= ? OR start_iso >= ?) LIMIT 1', [car_id, id, start_iso, end_iso], (err, overlapRow) => {
@@ -389,6 +391,7 @@ app.put('/api/bookings/:id', (req, res) => {
 app.delete('/api/bookings/:id', (req, res) => {
   const id = req.params.id;
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
+  const sessions = getSessions();
   if (!auth || !sessions.has(auth)) return res.status(403).json({ error: 'forbidden: passcode required' });
   const session = sessions.get(auth);
   // get booking before deleting so we can broadcast full info
@@ -445,6 +448,7 @@ app.get('/api/bookings/archive', (req, res) => {
 // check whether the current Authorization token grants write permission for bookings
 app.get('/api/auth/can_write', (req, res) => {
   const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
+  const sessions = getSessions();
   if (auth && sessions.has(auth)) {
     const s = sessions.get(auth);
     return res.json({ can_write: true, name: s.name });
