@@ -10,6 +10,7 @@ const WebSocket = require('ws');
 const db = require('./db');
 const ddns = require('./ddns');
 const crypto = require('crypto');
+const { requireSession, createSession, getSessions } = require('./auth');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
 let config = {};
@@ -194,8 +195,7 @@ async function checkInsuranceExpiries(){
 setTimeout(checkInsuranceExpiries, 1000 * 5);
 setInterval(checkInsuranceExpiries, 1000 * 60 * 60 * 12);
 
-// simple in-memory session store for passcode logins
-const sessions = new Map(); // token -> { id, name, created }
+// simple in-memory session store for passcode logins is now in auth.js
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(12).toString('hex');
@@ -218,13 +218,7 @@ function verifyPassword(password, stored) {
   }
 }
 
-function createSession(passcodeRow) {
-  const token = crypto.randomBytes(18).toString('hex');
-  sessions.set(token, { id: passcodeRow.id, name: passcodeRow.name, created: Date.now() });
-  // expire after 24h
-  setTimeout(() => sessions.delete(token), 24 * 60 * 60 * 1000);
-  return token;
-}
+
 
 // ensure a default passcode exists on first run
 function ensureDefaultPasscode() {
@@ -247,12 +241,7 @@ function ensureDefaultPasscode() {
 }
 
 // require a valid passcode session (Bearer token)
-function requireSession(req, res, next){
-  const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
-  if (!auth || !sessions.has(auth)) return res.status(403).json({ error: 'forbidden: passcode required' });
-  req.session = sessions.get(auth);
-  next();
-}
+
 
 // ensure default admin passcode exists, then start server
 ensureDefaultPasscode();
