@@ -1,4 +1,5 @@
 import { fetchJson, fetchRaw } from './utils.js';
+import { createBanner } from './uiutils.js';
 
 export async function initHome(){
   const container = document.getElementById('calendarContainer');
@@ -333,18 +334,38 @@ export async function initHome(){
     try{
       const hdr = document.querySelector('header') || document.body;
       const id = 'insuranceBanner_' + (car.id || 'x');
-      if(document.getElementById(id)) return; // already shown
-      const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
+      if(document.getElementById(id)) return;
       const date = car.insurance_expiry_iso || '';
-      const textDiv = document.createElement('div'); textDiv.innerHTML = `Attenzione: assicurazione <strong>${car.modello}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).`;
-      banner.appendChild(textDiv);
-      const btnWrap = document.createElement('div'); btnWrap.style.display='flex'; btnWrap.style.gap='8px'; btnWrap.style.marginLeft='8px';
-      const insureBtn = document.createElement('button'); insureBtn.className = 'page-btn primary'; insureBtn.textContent = 'Assicurata';
-      const close = document.createElement('button'); close.className = 'page-btn'; close.textContent = 'Chiudi';
-      close.addEventListener('click', ()=>{ banner.remove(); });
-      btnWrap.appendChild(insureBtn); btnWrap.appendChild(close);
-      banner.appendChild(btnWrap);
-      hdr.insertAdjacentElement('afterend', banner);
+      async function dismissInsuranceNotification() {
+        try {
+          const notifs = await fetchJson('/api/notifications');
+          const notif = notifs.find(n => n.type === 'insurance' && n.car && n.car.id == car.id);
+          if(notif && notif.notification_id) {
+            await fetchRaw(`/api/notifications/${notif.notification_id}/dismiss`, { method: 'POST' });
+          }
+        } catch(e) { /* ignore */ }
+      }
+      createBanner({
+        id,
+        className: 'deletion-banner',
+        html: `<div>Attenzione: assicurazione <strong>${car.modello}</strong> ${(car.plate?(' - '+car.plate):'')} scade tra <strong>${daysLeft}</strong> giorni (${date}).</div>`,
+        buttons: [
+          { text: 'Assicurata', className: 'page-btn primary', onClick: async ()=>{ await dismissInsuranceNotification(); openInsuranceModal(); } },
+          { text: 'Chiudi', className: 'page-btn', onClick: async ()=>{ await dismissInsuranceNotification(); document.getElementById(id)?.remove(); } }
+        ],
+        parent: hdr
+      });
+// Polling notifiche persistenti ogni 10 minuti
+setInterval(async ()=>{
+  try {
+    const notifs = await fetchJson('/api/notifications');
+    // Mostra solo insurance non dismesse
+    (notifs||[]).filter(n => n.type === 'insurance' && n.car && n.car.id && !n.dismissed).forEach(n => {
+      // Evita duplicati
+      showInsuranceBanner(n.car, n.days_left);
+    });
+  } catch(e){}
+}, 10*60*1000);
 
       // modal creation function (reuse if exists)
       function openInsuranceModal(){

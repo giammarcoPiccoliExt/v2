@@ -82,3 +82,17 @@ Contatti e follow-up
 
 ---
 Generated: istruzioni rapide per aggiornamenti e deploy locali.
+
+
+
+
+Riepilogo:
+
+Controllo assicurazioni: ogni 12 ore (backend)
+Primo controllo assicurazioni: dopo 5 secondi (backend)
+Polling notifiche insurance: ogni 10 minuti (frontend)
+WS reconnect: backoff esponenziale (frontend)
+Auto-reload per inattività: ogni 2 minuti (frontend)
+Banner modifica prenotazione: timeout 10 secondi (frontend)
+WebSocket server: sempre attivo (backend)
+Se vuoi dettagli su uno specifico processo o vuoi aggiungere/ridurre la frequenza di uno di questi, dimmelo!
