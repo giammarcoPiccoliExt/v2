@@ -298,6 +298,34 @@ export async function initHome(){
 
   // listen for realtime deletion events
   window.addEventListener('booking:deleted', (ev)=>{ try{ showDeletionBanner(ev.detail); }catch(e){} });
+  // listen for booking update events
+  window.addEventListener('booking:updated', (ev)=>{ try{ showUpdateBanner(ev.detail); }catch(e){} });
+    function showUpdateBanner(b){
+      try{
+        const hdr = document.querySelector('header') || document.body;
+        const id = 'updateBanner_' + (b.id || 'x');
+        if(document.getElementById(id)) return; // already shown
+        const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
+        // Ricostruisci info auto e date
+        let carName = '';
+        if(b.car_id && window.carsList){
+          const car = window.carsList.find(c=>c.id==b.car_id);
+          if(car){
+            carName = car.modello || '';
+            if(car.descrizione) carName += ' - ' + car.descrizione;
+            if(car.plate) carName += ' / ' + car.plate;
+          }
+        }
+        const start = b.start_iso ? new Date(b.start_iso).toLocaleDateString('it') : (b.start_iso||'').slice(0,10);
+        const end = b.end_iso ? new Date(b.end_iso).toLocaleDateString('it') : (b.end_iso||'').slice(0,10);
+        banner.innerHTML = `<div>La prenotazione per <strong>${carName}</strong> ${(b.client_name?(' - '+b.client_name):'')} è stata <strong>modificata</strong>.<br>Nuove date: <strong>${start} → ${end}</strong></div>`;
+        const close = document.createElement('button'); close.className = 'page-btn'; close.textContent = '✕'; close.style.marginLeft = '8px';
+        close.addEventListener('click', ()=>{ banner.remove(); });
+        banner.appendChild(close);
+        hdr.insertAdjacentElement('afterend', banner);
+        setTimeout(()=>{ try{ banner.remove(); }catch(e){} }, 10000);
+      }catch(e){}
+    }
   // listen for insurance expiry alerts
   window.addEventListener('insurance:alert', (ev)=>{ try{ const m = ev.detail; showInsuranceBanner(m.car, m.days_left); }catch(e){} });
 
@@ -496,6 +524,9 @@ export async function initHome(){
                       try{ changeModal.style.position = 'fixed'; changeModal.style.zIndex = '200001'; }catch(e){}
                       const targetBooking = r;
                       let bmCarVal = targetBooking && targetBooking.car_id ? String(targetBooking.car_id) : null;
+                      // Precompila il nome cliente se presente
+                      const clientInputCR = changeModal.querySelector('input[name="client_name"]');
+                      if(clientInputCR && targetBooking && targetBooking.client_name) clientInputCR.value = targetBooking.client_name;
                       try{ if(targetBooking && targetBooking.start_iso) startInputCR.value = (targetBooking.start_iso||'').slice(0,10); if(targetBooking && targetBooking.end_iso) endInputCR.value = (targetBooking.end_iso||'').slice(0,10); }catch(e){}
                       // populate car select immediately
                       try{

@@ -221,6 +221,7 @@ async function checkInsuranceExpiries(){
                 }
               }
               if(shouldNotify){
+                // Invia la notifica a tutti i client, anche se già notificati
                 broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
                 db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified) VALUES (?,?)', [car.id, nowIso], function(e){});
               }
