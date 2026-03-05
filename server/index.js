@@ -187,6 +187,10 @@ function broadcast(obj) {
 
 // Insurance expiry reminder: check cars daily and notify when expiry within 10 days.
 async function checkInsuranceExpiries(){
+  // API per trigger manuale da settings
+  app.post('/api/check-insurance', (req, res) => {
+    checkInsuranceExpiries().then(()=>res.json({ok:true})).catch(()=>res.status(500).json({ok:false}));
+  });
   try{
     db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
       if(err || !rows) return;
@@ -217,7 +221,7 @@ async function checkInsuranceExpiries(){
                 }
               }
               if(shouldNotify){
-                broadcast({ type:'insurance_alert', car: { id: car.id, name: car.name, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
+                broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
                 db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified) VALUES (?,?)', [car.id, nowIso], function(e){});
               }
             });

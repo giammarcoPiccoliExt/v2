@@ -1,6 +1,18 @@
 import { fetchJson, fetchText, fetchRaw } from './utils.js';
 
 export async function initSettings(){
+    // Pulsante per check scadenza assicurazione
+    const checkBtn = document.getElementById('checkInsuranceBtn');
+    if(checkBtn){
+      checkBtn.addEventListener('click', async ()=>{
+        try {
+          await fetch('/api/check-insurance', {method:'POST'});
+          alert('Controllo scadenza assicurazione eseguito. Se ci sono scadenze riceverai una notifica.');
+        } catch(e){
+          alert('Errore durante il controllo scadenza assicurazione');
+        }
+      });
+    }
   const list = document.getElementById('carsList');
   if(!list) return;
 
