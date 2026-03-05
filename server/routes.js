@@ -1,3 +1,47 @@
+// Funzione per controllare sovrapposizioni di prenotazioni
+function overlaps(car_id, start_iso, end_iso, cb) {
+  db.get(
+    'SELECT id FROM bookings WHERE car_id = ? AND NOT (end_iso <= ? OR start_iso >= ?) LIMIT 1',
+    [car_id, start_iso, end_iso],
+    (err, row) => {
+      if (err) return cb(err);
+      cb(null, !!row);
+    }
+  );
+}
+// Crea una prenotazione (con controllo overlap)
+router.post('/api/bookings', requireSession, (req, res) => {
+  const { car_id, start_iso, end_iso, title, client_name, description } = req.body;
+  if (!car_id || !start_iso || !end_iso) return res.status(400).json({ error: 'missing fields' });
+
+  const session = req.session;
+  overlaps(car_id, start_iso, end_iso, (err, hasOverlap) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const force = !!req.body.force;
+    const proceedInsert = () => {
+      db.run(
+        'INSERT INTO bookings (car_id,start_iso,end_iso,title,client_name,creator_name,description) VALUES (?,?,?,?,?,?,?)',
+        [car_id, start_iso, end_iso, title || null, client_name || null, session?.name || null, description || null],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          const booking = { id: this.lastID, car_id, start_iso, end_iso, title, client_name: client_name || null, creator_name: session?.name || null, description: description || null };
+          // Notifica push persistente
+          // (broadcast gestito dal backend notifiche)
+          res.json(booking);
+        }
+      );
+    };
+    if (hasOverlap && force) {
+      db.run('DELETE FROM bookings WHERE car_id=? AND NOT (end_iso <= ? OR start_iso >= ?)', [car_id, start_iso, end_iso], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        proceedInsert();
+      });
+    } else {
+      if (hasOverlap) return res.status(409).json({ error: 'overlap' });
+      proceedInsert();
+    }
+  });
+});
 const express = require('express');
 const router = express.Router();
 const db = require('./db');
