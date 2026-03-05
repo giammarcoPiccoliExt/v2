@@ -341,9 +341,13 @@ export async function initHome(){
           const notifs = await fetchJson('/api/notifications');
           const notif = notifs.find(n => n.type === 'insurance' && n.car && n.car.id == car.id);
           if(notif && notif.notification_id) {
-            await fetchRaw(`/api/notifications/${notif.notification_id}/dismiss`, { method: 'POST' });
+            console.log('[DEBUG] Dismissing insurance notification id:', notif.notification_id);
+            const resp = await fetchRaw(`/api/notifications/${notif.notification_id}/dismiss`, { method: 'POST' });
+            console.log('[DEBUG] Dismiss response:', resp.status, resp.statusText);
+          } else {
+            console.warn('[DEBUG] Nessuna notifica insurance trovata per car.id', car.id);
           }
-        } catch(e) { /* ignore */ }
+        } catch(e) { console.error('[DEBUG] Errore dismissInsuranceNotification:', e); }
       }
       createBanner({
         id,
