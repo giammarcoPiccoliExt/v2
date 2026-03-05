@@ -245,19 +245,20 @@ async function checkInsuranceExpiries(){
                 broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
                 db.run('INSERT OR REPLACE INTO insurance_notifications (car_id,last_notified,active) VALUES (?,?,1)', [car.id, nowIso], function(e){});
               }
-            // Invio notifiche attive a ogni client che si connette
-            wss.on('connection', (ws) => {
-              db.all('SELECT cars.*, n.days_left FROM cars JOIN (
-                SELECT car_id, CAST((julianday(insurance_expiry_iso) - julianday(date())) AS INTEGER) AS days_left FROM insurance_notifications WHERE active=1
-              ) n ON cars.id = n.car_id', [], (err, rows) => {
-                if(!err && rows && rows.length){
-                  rows.forEach(car => {
-                    ws.send(JSON.stringify({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: car.days_left }));
-                  });
-                }
-              });
-            });
-            });
+// Invio notifiche attive a ogni client che si connette
+wss.on('connection', (ws) => {
+  const sql = `SELECT cars.*, CAST((julianday(cars.insurance_expiry_iso) - julianday(date())) AS INTEGER) AS days_left
+              FROM cars
+              JOIN insurance_notifications ON cars.id = insurance_notifications.car_id
+              WHERE insurance_notifications.active=1`;
+  db.all(sql, [], (err, rows) => {
+    if(!err && rows && rows.length){
+      rows.forEach(car => {
+        ws.send(JSON.stringify({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: car.days_left }));
+      });
+    }
+  });
+});
           }
         }catch(e){}
       });
