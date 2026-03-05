@@ -65,7 +65,14 @@ const apiRouter = require('./routes');
 app.use('/', apiRouter);
 
 // WebSocket server for push notifications
-const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app);
+let server;
+if (config.usePlainHttp) {
+  server = require('http').createServer(app);
+  console.log('Starting plain HTTP server (usePlainHttp=true)');
+} else {
+  server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app);
+  console.log('Starting HTTPS server');
+}
 const wss = setupWebSocket(server);
 
 // run insurance expiry check at startup and every 12 hours (broadcast is set by setupWebSocket)
@@ -78,6 +85,9 @@ try {
 } catch (e) { console.error('DDNS start error', e.message); }
 
 // export for electron control
+server.listen(PORT, () => {
+  console.log(`${config.usePlainHttp ? 'HTTP' : 'HTTPS'} server listening on port ${PORT}`);
+});
 module.exports = { server, shutdown: () => server.close() };
 
 // Web Push (VAPID) disabled — push notifications removed for this deployment
