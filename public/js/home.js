@@ -893,7 +893,7 @@ setInterval(async ()=>{
     form.addEventListener('submit', onSubmit);
     const bookingCancelBtn = document.getElementById('bookingCancelBtn');
     if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
-  });
+  };
 
   // ensure new-booking clears any edit marker
   const bookingModalEl = document.getElementById('bookingModal');
@@ -913,4 +913,4 @@ setInterval(async ()=>{
   });
 
   refresh();
-}
+
