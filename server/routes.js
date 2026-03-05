@@ -1,3 +1,9 @@
+
+const express = require('express');
+const router = express.Router();
+const db = require('./db');
+const { requireSession } = require('./auth');
+// Funzione per controllare sovrapposizioni di prenotazioni
 // Modifica una prenotazione (con controllo overlap e mantenimento client_name/creator_name)
 router.put('/api/bookings/:id', requireSession, (req, res) => {
   const id = req.params.id;
@@ -23,12 +29,6 @@ router.put('/api/bookings/:id', requireSession, (req, res) => {
     });
   });
 });
-const express = require('express');
-const router = express.Router();
-const db = require('./db');
-const { requireSession } = require('./auth');
-// Funzione per controllare sovrapposizioni di prenotazioni
-
 
 function overlaps(car_id, start_iso, end_iso, cb) {
   db.get(
