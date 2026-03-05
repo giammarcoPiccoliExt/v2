@@ -69,7 +69,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   let insuranceNotif = null;
   for(let i=0; i<15; i++) {
     const notifs = await getNotifications();
-    insuranceNotif = notifs.find(n => n.type === 'insurance' && n.car && n.car.id === car.id && !n.dismissed);
+    // DEBUG: stampa tutte le insurance trovate
+    const allIns = notifs.filter(n => n.type === 'insurance');
+    console.log(`[DEBUG] Ciclo ${i+1}: notifiche insurance trovate:`, JSON.stringify(allIns, null, 2));
+    insuranceNotif = allIns.find(n => n.car && n.car.id == car.id && !n.dismissed);
     if(insuranceNotif) break;
     await sleep(2000);
   }
