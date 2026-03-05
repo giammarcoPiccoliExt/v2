@@ -423,7 +423,11 @@ setInterval(async ()=>{
             if(res.status===403){ alert('Non autorizzato'); return; }
             if(res.status===409){ alert('Errore: conflitto'); return; }
             if(!res.ok){ const j = await res.json().catch(()=>({})); alert('Errore: '+(j.error||res.status)); return; }
-            modal.classList.add('hidden'); banner.remove(); await refresh();
+            modal.classList.add('hidden');
+            // Rimuovi il banner assicurazione se presente
+            const banner = document.getElementById('insuranceBanner_' + (car.id || 'x'));
+            if(banner) banner.remove();
+            await refresh();
           }catch(e){ console.error(e); alert('Errore di rete'); }
         };
         form.removeEventListener('submit', onSubmit);
