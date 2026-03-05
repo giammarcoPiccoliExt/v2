@@ -17,9 +17,22 @@ function setupNotificationListEndpoint(app, db) {
 function setupNotificationDismissEndpoint(app, db) {
   app.post('/api/notifications/:id/dismiss', (req, res) => {
     const id = req.params.id;
-    db.run('UPDATE notifications SET dismissed=1 WHERE id=?', [id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ dismissed: this.changes });
+    // Recupera la notifica
+    db.get('SELECT * FROM notifications WHERE id=?', [id], (err, row) => {
+      if (err || !row) return res.status(404).json({ error: 'not found' });
+      // Inserisci in archivio
+      db.run(
+        'INSERT INTO notifications_archive (type, payload, created_at) VALUES (?,?,?)',
+        [row.type, row.payload, row.created_at],
+        function(err2) {
+          if (err2) return res.status(500).json({ error: err2.message });
+          // Elimina dalla tabella attiva
+          db.run('DELETE FROM notifications WHERE id=?', [id], function(err3) {
+            if (err3) return res.status(500).json({ error: err3.message });
+            res.json({ archived: true });
+          });
+        }
+      );
     });
   });
 }

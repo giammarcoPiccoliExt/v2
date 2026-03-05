@@ -359,8 +359,8 @@ export async function initHome(){
 setInterval(async ()=>{
   try {
     const notifs = await fetchJson('/api/notifications');
-    // Mostra solo insurance non dismesse
-    (notifs||[]).filter(n => n.type === 'insurance' && n.car && n.car.id && !n.dismissed).forEach(n => {
+    // Mostra solo insurance attive (non archiviate)
+    (notifs||[]).filter(n => n.type === 'insurance' && n.car && n.car.id).forEach(n => {
       // Evita duplicati
       showInsuranceBanner(n.car, n.days_left);
     });

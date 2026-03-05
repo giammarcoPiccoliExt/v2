@@ -26,6 +26,15 @@ ensureDbDir();
 
 
 db.serialize(() => {
+  // Tabella storico notifiche (archivio)
+  db.run(
+    `CREATE TABLE IF NOT EXISTS notifications_archive (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`
+  );
 
   db.run(
     `CREATE TABLE IF NOT EXISTS cars (
