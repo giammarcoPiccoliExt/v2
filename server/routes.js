@@ -23,6 +23,30 @@ router.put('/api/bookings/:id', requireSession, (req, res) => {
         [car_id, start_iso, end_iso, title || oldRow.title, newClient, newCreator, description || oldRow.description, id],
         function (err) {
           if (err) return res.status(500).json({ error: err.message });
+          // Notifica push persistente se la modifica è fatta da un altro utente
+          try {
+            const session = req.session;
+            // Notifica solo se chi modifica NON è il creator originale
+            if (session && session.name && session.name !== oldRow.creator_name) {
+              const notifiche = require('./notifiche');
+              const broadcast = req.app.get('broadcast');
+              // Se il broadcast non è disponibile, ricrea (retrocompatibilità)
+              const wsBroadcast = broadcast || notifiche.createBroadcaster(require('ws').Server ? req.app.get('wss') : null, db);
+              const payload = {
+                type: 'booking_edit',
+                message: `La tua prenotazione è stata modificata da ${session.name}`,
+                booking_id: id,
+                car_id,
+                start_iso,
+                end_iso,
+                title: title || oldRow.title,
+                client_name: newClient,
+                creator_name: newCreator,
+                description: description || oldRow.description
+              };
+              if (wsBroadcast) wsBroadcast(payload);
+            }
+          } catch(e) { console.error('notifica modifica prenotazione', e); }
           res.json({ changed: this.changes });
         }
       );
@@ -110,19 +134,30 @@ router.post('/api/cars', requireSession, (req, res) => {
 router.put('/api/cars/:id', requireSession, (req, res) => {
   const id = req.params.id;
   const { modello, descrizione, color, size, price_per_day, plate, insurance_expiry_iso } = req.body;
-  const plateVal = plate ? plate : null;
-  db.get('SELECT id FROM cars WHERE plate IS NOT NULL AND plate = ? AND id != ? LIMIT 1', [plateVal, id], (err, row) => {
+  // Recupera i dati esistenti per riempire i campi obbligatori se non forniti
+  db.get('SELECT * FROM cars WHERE id=?', [id], (err, oldCar) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (row) return res.status(409).json({ error: 'duplicate', message: 'Targa già esistente' });
-    db.run(
-      'UPDATE cars SET modello=?, descrizione=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
-      [modello, descrizione, color, size, price_per_day || null, plateVal, insurance_expiry_iso || null, id],
-      function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        db.run('DELETE FROM insurance_notifications WHERE car_id = ?', [id], function (e) {});
-        res.json({ changed: this.changes });
-      }
-    );
+    if (!oldCar) return res.status(404).json({ error: 'not found' });
+    const newModello = (typeof modello !== 'undefined') ? modello : oldCar.modello;
+    const newDescrizione = (typeof descrizione !== 'undefined') ? descrizione : oldCar.descrizione;
+    const newColor = (typeof color !== 'undefined') ? color : oldCar.color;
+    const newSize = (typeof size !== 'undefined') ? size : oldCar.size;
+    const newPrice = (typeof price_per_day !== 'undefined') ? price_per_day : oldCar.price_per_day;
+    const newPlate = (typeof plate !== 'undefined') ? plate : oldCar.plate;
+    const newInsurance = (typeof insurance_expiry_iso !== 'undefined') ? insurance_expiry_iso : oldCar.insurance_expiry_iso;
+    db.get('SELECT id FROM cars WHERE plate IS NOT NULL AND plate = ? AND id != ? LIMIT 1', [newPlate, id], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (row) return res.status(409).json({ error: 'duplicate', message: 'Targa già esistente' });
+      db.run(
+        'UPDATE cars SET modello=?, descrizione=?, color=?, size=?, price_per_day=?, plate=?, insurance_expiry_iso=? WHERE id=?',
+        [newModello, newDescrizione, newColor, newSize, newPrice || null, newPlate, newInsurance || null, id],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          db.run('DELETE FROM insurance_notifications WHERE car_id = ?', [id], function (e) {});
+          res.json({ changed: this.changes });
+        }
+      );
+    });
   });
 });
 

@@ -574,7 +574,58 @@ export async function initHome(){
                             if(!payload.car_id){ alert('Seleziona un\'auto valida.'); return; }
                             const res = await fetchRaw(`/api/bookings/${targetBooking.id}`, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
                             if(res.status === 403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
-                            if(res.status === 409){ alert('Conflitto con altre prenotazioni.'); return; }
+                            if(res.status === 409){
+                              // Mostra il modal di conflitto come in nuova prenotazione, ma senza pulsanti di edit/elimina
+                              try {
+                                const bm = document.getElementById('bookingModal');
+                                const changeModal = document.getElementById('changeResolveModal');
+                                if (bm && !bm.classList.contains('hidden') && changeModal) {
+                                  // Recupera le prenotazioni in conflitto dal backend
+                                  const carId = bm.querySelector('select[name="car_id"]').value;
+                                  const s = bm.querySelector('input[name="start_date"]').value;
+                                  const e = bm.querySelector('input[name="end_date"]').value;
+                                  const start_iso = s + 'T00:00:00Z';
+                                  const end_iso = e + 'T23:59:59Z';
+                                  const body = { car_id: parseInt(carId), start_iso, end_iso, exclude_id: targetBooking.id };
+                                  fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+                                    .then(json=>{
+                                      const overlapping = (json.rows || []).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso));
+                                      const warning = changeModal.querySelector('.overlap-warning') || document.createElement('div');
+                                      warning.className = 'overlap-warning';
+                                      warning.innerHTML = '';
+                                      const title = document.createElement('div');
+                                      title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:';
+                                      title.style.fontWeight = '600';
+                                      title.style.marginBottom = '6px';
+                                      warning.appendChild(title);
+                                      overlapping.forEach(r => {
+                                        const row = document.createElement('div');
+                                        row.className = 'overlap-row';
+                                        row.style.display='flex';
+                                        row.style.justifyContent='space-between';
+                                        row.style.alignItems='center';
+                                        row.style.gap='8px';
+                                        row.style.marginBottom='6px';
+                                        const txt = document.createElement('div');
+                                        try{
+                                          const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
+                                          const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
+                                          txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
+                                        }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
+                                        row.appendChild(txt);
+                                        warning.appendChild(row);
+                                      });
+                                      // Rimuovi azioni
+                                      const actions = changeModal.querySelector('.actions');
+                                      if(actions) actions.style.display = 'none';
+                                      // Inserisci warning
+                                      changeModal.querySelector('.modal-content').insertBefore(warning, changeModal.querySelector('form'));
+                                      changeModal.classList.remove('hidden');
+                                    });
+                                }
+                              } catch(e) { alert('Conflitto con altre prenotazioni.'); }
+                              return;
+                            }
                             if(!res.ok){ const j = await res.json().catch(()=>({})); alert('Errore: '+(j.error||res.status)); return; }
                             // success: close modal and refresh calendar
                             changeModal.classList.add('hidden'); cleanup();
