@@ -68,9 +68,9 @@ app.use('/', apiRouter);
 const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app);
 const wss = setupWebSocket(server);
 
-// run insurance expiry check at startup and every 12 hours
-setTimeout(() => require('./ws').checkInsuranceExpiries(broadcast), 1000 * 5);
-setInterval(() => require('./ws').checkInsuranceExpiries(broadcast), 1000 * 60 * 60 * 12);
+// run insurance expiry check at startup and every 12 hours (broadcast is set by setupWebSocket)
+setTimeout(() => checkInsuranceExpiries(broadcast), 1000 * 5);
+setInterval(() => checkInsuranceExpiries(broadcast), 1000 * 60 * 60 * 12);
 
 // start DDNS updater only if configured
 try {
