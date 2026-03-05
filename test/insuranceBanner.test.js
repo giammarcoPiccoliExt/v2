@@ -9,6 +9,25 @@ const PASSWORD = process.env.PASSCODE_PASSWORD || 'inserisci_password_valida'; /
 
 let AUTH_TOKEN = null;
 
+// Utility: elimina tutte le notifiche insurance (se esiste endpoint)
+async function deleteAllInsuranceNotifications() {
+  const notifs = await getNotifications();
+  const insuranceNotifs = notifs.filter(n => n.type === 'insurance');
+  for(const n of insuranceNotifs) {
+    if(n.notification_id) {
+      const res = await fetch(BASE + `/api/notifications/${n.notification_id}/dismiss`, {
+        method: 'POST',
+        headers: AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}
+      });
+      if(res.ok) {
+        console.log(`[DEBUG] Notifica insurance ${n.notification_id} dismessa.`);
+      } else {
+        console.warn(`[DEBUG] Errore nel dismiss notifica ${n.notification_id}`);
+      }
+    }
+  }
+}
+
 async function login() {
   const res = await fetch(BASE + '/api/login', {
     method: 'POST',
@@ -54,6 +73,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 (async function testInsuranceBannerFlow() {
   await login();
+  // Pulisci tutte le notifiche insurance prima di iniziare
+  await deleteAllInsuranceNotifications();
   // 1. Trova un'auto qualsiasi
   const cars = await getCars();
   assert(cars.length > 0, 'Nessuna auto trovata');
