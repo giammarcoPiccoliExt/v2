@@ -6,8 +6,11 @@ export async function initSettings(){
     if(checkBtn){
       checkBtn.addEventListener('click', async ()=>{
         try {
-          await fetch('/api/check-insurance', {method:'POST'});
-          alert('Controllo scadenza assicurazione eseguito. Se ci sono scadenze riceverai una notifica.');
+          const res = await fetch('/api/check-insurance', {method:'POST'});
+          const json = await res.json();
+          if(json && json.expiring && json.expiring.length){
+            window.dispatchEvent(new CustomEvent('insurance:expiring', { detail: json.expiring }));
+          }
         } catch(e){
           alert('Errore durante il controllo scadenza assicurazione');
         }

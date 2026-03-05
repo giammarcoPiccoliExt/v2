@@ -1,3 +1,26 @@
+  // Notifica targhe in scadenza assicurazione (trigger manuale)
+  window.addEventListener('insurance:expiring', (ev)=>{ try{ showExpiringBanner(ev.detail); }catch(e){} });
+
+  function showExpiringBanner(list){
+    try{
+      if(!list || !list.length) return;
+      const hdr = document.querySelector('header') || document.body;
+      const id = 'expiringBanner';
+      if(document.getElementById(id)) return;
+      const banner = document.createElement('div'); banner.id = id; banner.className = 'deletion-banner';
+      let html = '<div><strong>Assicurazione in scadenza:</strong><br>';
+      list.forEach(c => {
+        html += `${c.modello || ''}${c.descrizione ? ' - ' + c.descrizione : ''}${c.plate ? ' / ' + c.plate : ''} (<strong>${c.days_left} giorni</strong>)<br>`;
+      });
+      html += '</div>';
+      banner.innerHTML = html;
+      const close = document.createElement('button'); close.className = 'page-btn'; close.textContent = '✕'; close.style.marginLeft = '8px';
+      close.addEventListener('click', ()=>{ banner.remove(); });
+      banner.appendChild(close);
+      hdr.insertAdjacentElement('afterend', banner);
+      setTimeout(()=>{ try{ banner.remove(); }catch(e){} }, 10000);
+    }catch(e){}
+  }
 import { fetchJson, fetchRaw } from './utils.js';
 
 export async function initHome(){
