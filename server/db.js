@@ -116,7 +116,8 @@ db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS insurance_notifications (
       car_id INTEGER PRIMARY KEY,
-      last_notified TEXT
+      last_notified TEXT,
+      active INTEGER DEFAULT 1
     )`
   );
 });
