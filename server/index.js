@@ -189,7 +189,28 @@ function broadcast(obj) {
 async function checkInsuranceExpiries(){
   // API per trigger manuale da settings
   app.post('/api/check-insurance', (req, res) => {
-    checkInsuranceExpiries().then(()=>res.json({ok:true})).catch(()=>res.status(500).json({ok:false}));
+    db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
+      if(err || !rows) return res.status(500).json({error:'db'});
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const expiring = [];
+      rows.forEach(car=>{
+        try{
+          const iso = car.insurance_expiry_iso;
+          if(!iso) return;
+          const exp = new Date((iso.length===10)? (iso + 'T00:00:00Z') : iso);
+          if(isNaN(exp)) return;
+          const diffMs = exp.getTime() - today.getTime();
+          const daysLeft = Math.ceil(diffMs / 86400000);
+          if(daysLeft <= 10 && daysLeft >= 0){
+            expiring.push({ plate: car.plate, modello: car.modello, descrizione: car.descrizione, days_left: daysLeft });
+            // invia notifica a tutti
+            broadcast({ type:'insurance_alert', car: { id: car.id, modello: car.modello, descrizione: car.descrizione, plate: car.plate, insurance_expiry_iso: car.insurance_expiry_iso }, days_left: daysLeft });
+          }
+        }catch(e){}
+      });
+      res.json({ expiring });
+    });
   });
   try{
     db.all('SELECT * FROM cars WHERE insurance_expiry_iso IS NOT NULL', [], (err, rows) => {
