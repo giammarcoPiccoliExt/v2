@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('./db');
-
+const { requireSession } = require('./index');
 // Health
 router.get('/health', (req, res) => {
   db.get('SELECT 1 as ok', [], (err) => {
