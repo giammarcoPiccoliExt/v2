@@ -194,7 +194,7 @@ export function setupNewBookingModal(refresh) {
                                 payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso;
                               }
                             }catch(e){ payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso; }
-                            if(!payload.car_id){ alert('Seleziona un'auto valida.'); return; }
+                            if(!payload.car_id){ alert("Seleziona un'auto valida."); return; }
                             const res = await fetchRaw(`/api/bookings/${targetBooking.id}`, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
                             if(res.status === 403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
                             if(res.status === 409){
@@ -274,7 +274,7 @@ export function setupNewBookingModal(refresh) {
                           // fallback: nothing to do
                         }catch(e){ console.error(e); }
                         changeModal.classList.add('hidden'); cleanup();
-                      };
+                      }
                       form.addEventListener('submit', onSubmit);
                       closeBtn.onclick = ()=>{ changeModal.classList.add('hidden'); cleanup(); };
                       cancelBtn.onclick = ()=>{ changeModal.classList.add('hidden'); cleanup(); };
