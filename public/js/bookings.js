@@ -378,63 +378,25 @@ export function initBookings(){
     // fallback: use the existing booking modal for editing when overlay not appropriate
     if(!modal) return;
     const form = document.getElementById('bookingModalForm');
-    // set booking modal title
-    const bookingTitleEl = document.getElementById('bookingModalTitle');
-    if(bookingTitleEl) bookingTitleEl.textContent = 'Modifica Prenotazione';
-    // prefill fields
-    form.querySelector('input[name="client_name"]').value = bk.client_name || '';
+    // set booking modal title to client name (not "Nuova Prenotazione")
+    const bookingTitleEl = document.getElementById('bookingModalTitle'); if(bookingTitleEl) bookingTitleEl.textContent = 'Modifica' || 'Modifica';
     form.querySelector('input[name="start_date"]').value = bk.start_iso.slice(0,10);
     form.querySelector('input[name="end_date"]').value = bk.end_iso.slice(0,10);
-    const sel = form.querySelector('select[name="car_id"]');
-    sel.innerHTML = '';
+    const sel = form.querySelector('select[name="car_id"]'); sel.innerHTML = '';
+    // populate car options
     cars.forEach(c=>{
       let label = (c.modello || '');
       if(c.descrizione) label += ' - ' + c.descrizione;
       if(c.plate) label += ' / ' + c.plate;
       const o = document.createElement('option'); o.value = c.id; o.textContent = label; if(c.id===bk.car_id) o.selected=true; sel.appendChild(o);
     });
+    form.querySelector('input[name="client_name"]').value = bk.client_name || '';
     form.querySelector('input[name="description"]').value = bk.description || '';
-    // set submit handler to PUT (sostituisce quello di default)
+    // set submit handler to PUT
     const onSubmit = async (e)=>{
       e.preventDefault();
       const data = new FormData(form); const body = Object.fromEntries(data.entries());
-      // require fields: car_id, start_date, end_date, client_name
-      if(!body.car_id || !body.start_date || !body.end_date || !(body.client_name && body.client_name.trim())){
-        alert('Compila tutti i campi obbligatori: auto, data inizio, data fine e nome cliente.');
-        return;
-      }
-      const sDate = new Date(body.start_date);
-      const eDate = new Date(body.end_date);
-      if(isNaN(sDate) || isNaN(eDate) || sDate > eDate){ alert('Date non valide: assicurati che la data di inizio sia <= data di fine.'); return; }
-      const start_iso = body.start_date + 'T00:00:00Z'; const end_iso = body.end_date + 'T23:59:59Z';
-      const car_id = parseInt(body.car_id);
-      // check overlap server-side (include exclude_id)
-      const chkBody = { car_id, start_iso, end_iso, exclude_id: bk.id };
-      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
-      if(chk.overlap){
-        // show detailed overlapping bookings in the warning area
-        const warning = document.getElementById('overlapWarning');
-        if(warning) {
-          warning.classList.remove('hidden');
-          warning.innerHTML = '';
-          const title = document.createElement('div'); title.textContent = 'Conflitto: le seguenti prenotazioni si sovrappongono:'; title.style.fontWeight = '600'; title.style.marginBottom = '6px';
-          warning.appendChild(title);
-          (chk.rows||[]).filter(r=> !(r.end_iso < start_iso || r.start_iso > end_iso)).forEach(r => {
-            const row = document.createElement('div'); row.className = 'overlap-row'; row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='8px'; row.style.marginBottom='6px';
-            const txt = document.createElement('div');
-            try{
-              const rStart = r.start_iso ? new Date(r.start_iso).toLocaleDateString('it') : (r.start_iso||'').slice(0,10);
-              const rEnd = r.end_iso ? new Date(r.end_iso).toLocaleDateString('it') : (r.end_iso||'').slice(0,10);
-              txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${rStart} → ${rEnd})`;
-            }catch(e){ txt.textContent = `${(r.client_name||r.title||'Prenotazione')} (${r.start_iso.slice(0,10)} → ${r.end_iso.slice(0,10)})`; }
-            row.appendChild(txt);
-            warning.appendChild(row);
-          });
-        }
-        return;
-      }
-      // se tutto ok, salva
-      const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
+      const payload = { car_id: parseInt(body.car_id), start_iso: body.start_date+'T00:00:00Z', end_iso: body.end_date+'T23:59:59Z', title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
       const res = await fetchRaw(`/api/bookings/${bk.id}`, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
       if(res.ok){ alert('Aggiornato'); modal.classList.add('hidden'); render(); form.removeEventListener('submit', onSubmit); }
       else{ const j = await res.json(); alert('Errore: '+(j.error||res.status)); }

@@ -1,42 +1,16 @@
+// Modulo per la gestione delle modali di prenotazione (nuova/edit)
 import { fetchJson, fetchRaw } from './utils.js';
-import { createBanner } from './uiutils.js';
-import { softenHex, formatDayLabel, esc } from './homeutils.js';
-import { renderCalendar } from './calendar.js';
-import { setupNewBookingModal } from './bookingmodals.js';
-import { showDeletionBanner, showUpdateBanner } from './notifiche.js';
 
-export async function initHome(){
-  const container = document.getElementById('calendarContainer');
-  const carsCol = document.getElementById('carsCol');
-  // New booking modal flow
-  setupNewBookingModal(refresh);
-      const myName = localStorage.getItem('passcode_name') || '';
-      if(!myName) return;
-      const rows = await fetchJson(`/api/bookings/archive?name=${encodeURIComponent(myName)}`);
-      if(!rows || !rows.length) return;
-      rows.forEach(r=>{
-        try{ showDeletionBanner(r, fetchCars); }catch(e){}
-      });
-    }catch(e){/* ignore errors */}
-  }
-
-  // run once on init to catch missed deletion events
-  try{ checkArchivedDeletions(); }catch(e){}
-
-  // Listen for realtime booking events to refresh calendar
-  window.addEventListener('booking:created', ()=>{ refresh(); });
-  // Listen for deletion/update events to show banners
-  window.addEventListener('booking:deleted', (ev)=>{ try{ showDeletionBanner(ev.detail, fetchCars); }catch(e){} });
-  window.addEventListener('booking:updated', (ev)=>{ try{ showUpdateBanner(ev.detail, window.carsList); }catch(e){} });
-
-  // scroll controls: scroll by 7 cells width
-  scrollLeftBtn?.addEventListener('click', ()=>{ calendarWrapper?.scrollBy({ left: -840, behavior:'smooth' }); });
-  scrollRightBtn?.addEventListener('click', ()=>{ calendarWrapper?.scrollBy({ left: 840, behavior:'smooth' }); });
-
-  // New booking modal flow
-  newBookingBtn?.addEventListener('click', async ()=>{
+/**
+ * Inizializza la modale di nuova prenotazione
+ * @param {Function} refresh - funzione per aggiornare il calendario
+ */
+export function setupNewBookingModal(refresh) {
+  const newBookingBtn = document.getElementById('newBookingBtnHome');
+  if (!newBookingBtn) return;
+  newBookingBtn.addEventListener('click', async () => {
     // open modal and populate car list grouped by size
-    const cars = await fetchCars();
+    const cars = await fetchJson('/api/cars');
     const select = document.querySelector('#bookingModal select[name="car_id"]');
     select.innerHTML = '';
     const groups = {};
@@ -125,7 +99,7 @@ export async function initHome(){
                       try{ if(targetBooking && targetBooking.start_iso) startInputCR.value = (targetBooking.start_iso||'').slice(0,10); if(targetBooking && targetBooking.end_iso) endInputCR.value = (targetBooking.end_iso||'').slice(0,10); }catch(e){}
                       // populate car select immediately
                       try{
-                        fetchCars().then(carsList=>{
+                        fetchJson('/api/cars').then(carsList=>{
                           carSelect.innerHTML = '';
                           // Raggruppa per size come in nuova prenotazione
                           const groups = {};
@@ -220,7 +194,7 @@ export async function initHome(){
                                 payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso;
                               }
                             }catch(e){ payload.start_iso = targetBooking.start_iso; payload.end_iso = targetBooking.end_iso; }
-                            if(!payload.car_id){ alert('Seleziona un\'auto valida.'); return; }
+                            if(!payload.car_id){ alert('Seleziona un'auto valida.'); return; }
                             const res = await fetchRaw(`/api/bookings/${targetBooking.id}`, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
                             if(res.status === 403){ alert('Non autorizzato: effettua il login con un passcode.'); return; }
                             if(res.status === 409){
@@ -333,53 +307,17 @@ export async function initHome(){
     startInput.addEventListener('change', checkOverlap);
     endInput.addEventListener('change', checkOverlap);
 
-    // Do NOT auto-fill client_name here; leave the field empty for the user to enter.
+    // Do NOT auto-fill client_name qui; lascia il campo vuoto per l'utente.
 
     document.getElementById('bookingModal').classList.remove('hidden');
-
-    // save handler
-    const form = document.getElementById('bookingModalForm');
-    const onSubmit = async (e)=>{
-      e.preventDefault();
-      const data = new FormData(form); const body = Object.fromEntries(data.entries());
-      // require fields: car_id, start_date, end_date, client_name
-      if(!body.car_id || !body.start_date || !body.end_date || !(body.client_name && body.client_name.trim())){
-        alert('Compila tutti i campi obbligatori: auto, data inizio, data fine e nome cliente.');
-        return;
-      }
-      const sDate = new Date(body.start_date);
-      const eDate = new Date(body.end_date);
-      if(isNaN(sDate) || isNaN(eDate) || sDate > eDate){ alert('Date non valide: assicurati che la data di inizio sia <= data di fine.'); return; }
-      const start_iso = body.start_date + 'T00:00:00Z'; const end_iso = body.end_date + 'T23:59:59Z';
-      const car_id = parseInt(body.car_id);
-      // check one more time server-side
-      // include optional exclude id when editing
-      const bm = document.getElementById('bookingModal');
-      const excludeId = bm?.dataset?.editId ? parseInt(bm.dataset.editId) : null;
-      const chkBody = { car_id, start_iso, end_iso };
-      if(excludeId) chkBody.exclude_id = excludeId;
-      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
-      if(chk.overlap){
-        // show detailed overlapping bookings in the warning area so user can delete the specific one
-        checkOverlap();
-        return;
-      }
-      const payload = { car_id, start_iso, end_iso, title: body.description || body.client_name || 'Prenotazione', client_name: body.client_name || null, description: body.description || null };
-      const res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
-      if(res.status===403) { alert('Non autorizzato (passcode richiesto)'); return; }
-      if(!res.ok) { alert('Salvataggio fallito'); return; }
-      document.getElementById('bookingModal').classList.add('hidden');
-      form.removeEventListener('submit', onSubmit);
-      refresh();
-    };
-    form.addEventListener('submit', onSubmit);
-    const bookingCancelBtn = document.getElementById('bookingCancelBtn');
-    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
   });
+}
 
-  // ensure new-booking clears any edit marker
-  const bookingModalEl = document.getElementById('bookingModal');
-  if(bookingModalEl){ bookingModalEl.addEventListener('show', ()=>{ delete bookingModalEl.dataset.editId; }); }
-
-  refresh();
+/**
+ * Inizializza la modale di modifica prenotazione
+ * @param {Function} refresh - funzione per aggiornare il calendario
+ */
+export function setupEditBookingModal(refresh) {
+  // ...estrai qui la logica di apertura e popolamento modale edit da home.js...
+  // (Vedi refactoring step successivo per spostare la logica)
 }
