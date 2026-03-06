@@ -310,6 +310,54 @@ export function setupNewBookingModal(refresh) {
     // Do NOT auto-fill client_name qui; lascia il campo vuoto per l'utente.
 
     document.getElementById('bookingModal').classList.remove('hidden');
+
+    // --- Submit nuova prenotazione ---
+    const form = document.getElementById('bookingModalForm');
+    const onSubmit = async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const body = Object.fromEntries(data.entries());
+      // require fields: car_id, start_date, end_date, client_name
+      if(!body.car_id || !body.start_date || !body.end_date || !(body.client_name && body.client_name.trim())){
+        alert('Compila tutti i campi obbligatori: auto, data inizio, data fine e nome cliente.');
+        return;
+      }
+      const sDate = new Date(body.start_date);
+      const eDate = new Date(body.end_date);
+      if(isNaN(sDate) || isNaN(eDate) || sDate > eDate){ alert('Date non valide: assicurati che la data di inizio sia <= data di fine.'); return; }
+      const start_iso = body.start_date + 'T00:00:00Z';
+      const end_iso = body.end_date + 'T23:59:59Z';
+      const car_id = parseInt(body.car_id);
+      // check one more time server-side
+      // include optional exclude id when editing
+      const bm = document.getElementById('bookingModal');
+      const excludeId = bm?.dataset?.editId ? parseInt(bm.dataset.editId) : null;
+      const chkBody = { car_id, start_iso, end_iso };
+      if(excludeId) chkBody.exclude_id = excludeId;
+      const chk = await fetchJson('/api/bookings/check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(chkBody) });
+      if(chk.overlap){
+        // show detailed overlapping bookings in the warning area so user can delete the specific one
+        checkOverlap();
+        return;
+      }
+      const payload = {
+        car_id,
+        start_iso,
+        end_iso,
+        title: body.description || body.client_name || 'Prenotazione',
+        client_name: body.client_name || null,
+        description: body.description || null
+      };
+      const res = await fetchRaw('/api/bookings', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+      if(res.status===403) { alert('Non autorizzato (passcode richiesto)'); return; }
+      if(!res.ok) { alert('Salvataggio fallito'); return; }
+      document.getElementById('bookingModal').classList.add('hidden');
+      form.removeEventListener('submit', onSubmit);
+      refresh();
+    };
+    form.addEventListener('submit', onSubmit);
+    const bookingCancelBtn = document.getElementById('bookingCancelBtn');
+    if(bookingCancelBtn) bookingCancelBtn.onclick = ()=>{ document.getElementById('bookingModal').classList.add('hidden'); form.removeEventListener('submit', onSubmit); };
   });
 }
 
