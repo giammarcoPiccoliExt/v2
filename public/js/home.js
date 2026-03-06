@@ -90,6 +90,15 @@ export async function initHome(){
   window.addEventListener('booking:deleted', (ev)=>{ try{ showDeletionBanner(ev.detail, fetchCars); }catch(e){} });
   window.addEventListener('booking:updated', (ev)=>{ try{ showUpdateBanner(ev.detail, window.carsList); }catch(e){} });
 
+    // --- Insurance alert event ---
+    window.addEventListener('insurance:alert', (ev) => {
+      try {
+        // ev.detail contains { type: 'insurance_alert', policies: [...] }
+        const { showInsuranceBanner } = await import('./notifiche.js');
+        showInsuranceBanner(ev.detail);
+      } catch (e) {}
+    });
+
   // --- Scroll calendario ---
   scrollLeftBtn?.addEventListener('click', ()=>{ calendarWrapper?.scrollBy({ left: -840, behavior:'smooth' }); });
   scrollRightBtn?.addEventListener('click', ()=>{ calendarWrapper?.scrollBy({ left: 840, behavior:'smooth' }); });

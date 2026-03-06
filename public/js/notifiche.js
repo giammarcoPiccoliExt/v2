@@ -57,3 +57,14 @@ export function showUpdateBanner(b, carsList) {
 }
 
 // Altre funzioni per insuranceBanner e polling possono essere estratte qui...
+
+// Insurance notification/banner logic
+export function showInsuranceBanner(alert) {
+  if (!alert || !alert.policies || !alert.policies.length) return;
+  const hdr = document.querySelector('header') || document.body;
+  const id = 'insuranceBanner';
+  if (document.getElementById(id)) return; // already shown
+  const html = `<div><strong>Attenzione:</strong> Polizze assicurative in scadenza:<ul style="margin:8px 0;">${alert.policies.map(p => `<li><strong>${p.car_name || p.car_id}</strong>: ${p.expiry_date}</li>`).join('')}</ul></div>`;
+  const closeBtn = { text: '✕', className: 'page-btn', onClick: () => { document.getElementById(id)?.remove(); } };
+  createBanner({ id, className: 'insurance-banner', html, buttons: [closeBtn], timeout: 0, parent: hdr });
+}
