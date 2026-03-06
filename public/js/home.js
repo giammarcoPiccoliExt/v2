@@ -91,7 +91,7 @@ export async function initHome(){
   window.addEventListener('booking:updated', (ev)=>{ try{ showUpdateBanner(ev.detail, window.carsList); }catch(e){} });
 
     // --- Insurance alert event ---
-    window.addEventListener('insurance:alert', (ev) => {
+    window.addEventListener('insurance:alert', async (ev) => {
       try {
         // ev.detail contains { type: 'insurance_alert', policies: [...] }
         const { showInsuranceBanner } = await import('./notifiche.js');
